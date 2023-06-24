@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ Copyright (C) 2019 Sony Mobile Communications Inc.
+ All rights, including trade secret rights, reserved.
+-->
+
+<permissions>
+    <library name="com.sonymobile.securedatamanager"
+             file="/system/system_ext/framework/com.sonymobile.securedatamanager_impl.jar"/>
+</permissions>

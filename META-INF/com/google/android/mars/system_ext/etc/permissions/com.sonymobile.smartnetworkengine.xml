@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   Copyright 2020 Sony Corporation
+-->
+
+<permissions>
+    <privapp-permissions package="com.sonymobile.smartnetworkengine">
+        <permission name="android.permission.BROADCAST_CLOSE_SYSTEM_DIALOGS"/>
+        <permission name="android.permission.READ_PRECISE_PHONE_STATE"/>
+        <permission name="android.permission.READ_PRIVILEGED_PHONE_STATE"/>
+        <permission name="android.permission.READ_WIFI_CREDENTIAL"/>
+        <permission name="android.permission.WIFI_UPDATE_USABILITY_STATS_SCORE"/>
+        <permission name="android.permission.WRITE_SECURE_SETTINGS"/>
+        <permission name="com.sonymobile.permission.SECURE_DATA_MANAGER"/>
+        <permission name="com.sonymobile.permission.SNE_WIFI_SCAN"/>
+    </privapp-permissions>
+
+    <!--
+        TODO: Added temporarily as privapp-permissions-system-ext.xml seems to be not generated
+        on Nagara1.0 platform at this point. Ext app relies on that file.
+    -->
+    <privapp-permissions package="com.sonymobile.smartnetworkengine.ext">
+        <permission name="android.permission.READ_PRECISE_PHONE_STATE" />
+        <permission name="android.permission.READ_PRIVILEGED_PHONE_STATE" />
+        <permission name="android.permission.WRITE_APN_SETTINGS" />
+    </privapp-permissions>
+</permissions>

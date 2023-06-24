@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Copyright (C) 2020 Sony Mobile Communications Inc.
+    All rights, including trade secret rights, reserved.
+-->
+
+<permissions>
+    <privapp-permissions package="com.sonymobile.supplementallyservice.dcm">
+        <permission name="android.permission.MANAGE_USERS"/>
+        <permission name="android.permission.INTERACT_ACROSS_USERS"/>
+    </privapp-permissions>
+</permissions>

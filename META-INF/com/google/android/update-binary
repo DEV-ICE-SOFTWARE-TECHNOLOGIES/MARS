@@ -1,0 +1,228 @@
+#!/system/bin/bash -i
+
+umask 022
+
+set -x
+
+# To-Do
+# - Add support for TWRP Progress Bar
+# - Add own persistent location for Content
+# - Zipalign and dexopt APKs
+
+
+# MARS Version
+MARS_VER='23.06'
+MARS_VER_CODE=230624
+
+# Color Codes
+BGBLACK='\033[40m'
+BGBLUE='\033[44m'
+BGCYAN='\033[46m'
+BGGREEN='\033[42m'
+BGPURPLE='\033[45m'
+BGRED='\033[41m'
+BGWHITE='\033[47m'
+BGYELLOW='\033[43m'
+BLACK='\033[0;30m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+GREEN='\033[0;32m'
+NOCOLOR='\033[0m'
+PURPLE='\033[0;35m'
+RED='\033[0;31m'
+WHITE='\033[0;37m'
+YELLOW='\033[0;33m'
+
+# Print start message
+echo -e "${PURPLE}"
+echo ""
+echo -e "STARTING MARS-$MARS_VER"
+echo ""
+echo -e "${NOCOLOR}"
+
+# Sync filesystem
+sync
+
+set_progress 0
+
+sleep 1
+
+# Mount partitions
+echo -e "${GREEN}"
+echo "MOUNTING PARTITIONS..."
+echo "${NOCOLOR}"
+mount -o rw /cache
+mount -o rw /data
+mount -o rw /product
+mount -o rw /system_ext
+mount -o rw /system_root
+mount -o rw /vendor
+
+set_progress 1
+
+sleep 1
+
+# Wipe filesystems
+echo -e "${GREEN}"
+echo "WIPING FILESYSTEMS..."
+echo "${NOCOLOR}"
+rm -rf "/cache"
+rm -rf "/data/cache"
+rm -rf "/data/dalvik-cache"
+
+# Remove boot animation
+echo -e "${GREEN}"
+echo "REMOVING BOOT ANIMATION..."
+echo "${NOCOLOR}"
+rm -rf "/system_root/system/media/bootanimation.zip"
+
+# Remove unnecessary apps
+echo -e "${GREEN}"
+echo "REMOVING UNNECESSARY APPS..."
+echo "${NOCOLOR}"
+rm -rf "/system_root/system/app/Stk"
+rm -rf "/product/app/Calculator"
+rm -rf "/product/app/DeskClock"
+rm -rf "/product/app/Email"
+rm -rf "/product/app/FileExplorer"
+rm -rf "/product/app/Health"
+rm -rf "/product/app/MiuiVideoGlobal"
+rm -rf "/product/app/MiuiCompass"
+rm -rf "/product/app/Notes"
+rm -rf "/product/priv-app/Contacts"
+rm -rf "/product/priv-app/Calendar"
+rm -rf "/product/priv-app/SoundRecorder"
+rm -rf "/product/priv-app/Mms"
+rm -rf "/product/priv-app/Music"
+rm -rf "/product/priv-app/MiService"
+rm -rf "/product/priv-app/MiMover"
+rm -rf "/product/priv-app/MiBrowserGlobal"
+rm -rf "/product/priv-app/MiuiGallery"
+rm -rf "/product/priv-app/MiuiScanner"
+rm -rf "/product/priv-app/Weather"
+
+# Extract Zip Contents
+echo -e "${GREEN}"
+echo "EXTRACTING ZIP CONTENTS..."
+echo "${NOCOLOR}"
+unzip "/sdcard/META-INF.zip" "META-INF/com/google/android/mars/*" -d "/tmp/mars"
+
+set_progress 2
+
+sleep 1
+
+# Extract System Contents
+echo -e "${GREEN}"
+echo "EXTRACTING SYSTEM CONTENTS..."
+echo "${NOCOLOR}"
+mv "tmp/mars/product/*" "/product"
+mv "tmp/mars/system_ext/*" "/system_ext"
+mv "tmp/mars/system/*" "/system_root/system"
+mv "tmp/mars/vendor/*" "/vendor"
+
+set_progress 3
+
+sleep 1
+
+# Run patch prop script
+echo -e "${YELLOW}"
+echo "RUNNING PATCH PROP SCRIPT..."
+echo "${NOCOLOR}"
+unzip "/tmp/mars/patch/patch.zip" "META-INF/com/google/android/update-binary" -d "/tmp/patch"
+sh "/tmp/mars/patch/META-INF/com/google/android/update-binary" dummy 0 "/tmp/mars/patch/patch.zip"
+
+sleep 1
+
+# Magisk installation check
+if [ -d "/data/adb/magisk" ]; then
+  echo -e "${YELLOW}"
+  echo "MAGISK ALREADY INSTALLED, SKIPPING..."
+  echo "${NOCOLOR}"
+else
+  # Install Magisk
+  echo -e "${YELLOW}"
+  echo "MAGISK NOT FOUND, INSTALLATION STARTS..."
+  echo "${NOCOLOR}"
+  unzip "/tmp/mars/magisk/magisk.zip" "META-INF/com/google/android/update-binary" -d "/tmp/magisk"
+  sh "/tmp/magisk/META-INF/com/google/android/update-binary" dummy 1 "/tmp/magisk/magisk.zip"
+fi
+
+set_progress 4
+
+sleep 1
+
+# Remount partitions
+echo -e "${GREEN}"
+echo "RE-MOUNTING PARTITIONS..."
+echo "${NOCOLOR}"
+mount -o rw /cache
+mount -o rw /data
+mount -o rw /product
+mount -o rw /system_ext
+mount -o rw /system_root
+mount -o rw /vendor
+
+set_progress 5
+
+sleep 1
+
+# Trim filesystems
+echo -e "${WHITE}"
+echo "TRIMMING FILESYSTEMS..."
+echo "${NOCOLOR}"
+
+/system/bin/busybox fstrim -v /cache
+/system/bin/busybox fstrim -v /data
+/system/bin/busybox fstrim -v /product
+/system/bin/busybox fstrim -v /system_ext
+/system/bin/busybox fstrim -v /system_root
+/system/bin/busybox fstrim -v /vendor
+
+set_progress 6
+
+sleep 1
+
+# Unmount partitions
+echo -e "${GREEN}"
+echo "UNMOUNTING PARTITIONS..."
+echo "${NOCOLOR}"
+
+if [ -n "$(mount | grep /cache)" ]; then
+  umount /cache
+fi
+if [ -n "$(mount | grep /data)" ]; then
+  umount /data
+fi
+if [ -n "$(mount | grep /product)" ]; then
+  umount /product
+fi
+if [ -n "$(mount | grep /system_ext)" ]; then
+  umount /system_ext
+fi
+if [ -n "$(mount | grep /system_root)" ]; then
+  umount /system_root
+fi
+if [ -n "$(mount | grep /vendor)" ]; then
+  umount /vendor
+fi
+
+set_progress 7
+
+sleep 1
+
+# Print completion message
+echo "----MARS-$MARS_VER INSTALLATION COMPLETED"
+
+set_progress 8
+
+sleep 1
+
+rm -rf "/tmp/mars"
+rm -rf "/tmp/patch"
+rm -rf "/tmp/magisk"
+
+set_progress 10
+
+sleep 1
+
+exit 0

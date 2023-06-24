@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Copyright 2021 Sony Corporation
+-->
+<permissions>
+    <privapp-permissions package="com.nttdocomo.android.mascot">
+        <deny-permission name="android.permission.PACKAGE_USAGE_STATS"/>
+    </privapp-permissions>
+</permissions>

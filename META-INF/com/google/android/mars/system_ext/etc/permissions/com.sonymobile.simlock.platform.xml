@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<permissions>
+    <library name="com.sonymobile.simlock.platform.api"
+             file="/system/system_ext/framework/com.sonymobile.simlock.platform_impl.jar"/>
+</permissions>

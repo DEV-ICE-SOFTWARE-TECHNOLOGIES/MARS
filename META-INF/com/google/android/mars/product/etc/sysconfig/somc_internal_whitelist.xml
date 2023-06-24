@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Copyright 2021 Sony Corporation
+-->
+
+<config>
+    <!-- These are the standard packages that are white-listed to always have internet
+          access while in power save mode, even if they aren't in the foreground.
+
+         An example of white-listed is following:
+
+         <allow-in-power-save package="com.example.a" />
+          - The packages that are white-listed to be able to run in the
+            background while in power save mode.
+          - The packages that are white-listed to be exempted from Background service
+            restriction after Android O.
+
+         <allow-in-power-save-except-idle package="com.example.b" />
+          - The packages that are white-listed to be able to run in the
+            background while in power save mode.
+            (but not whitelisted from device idle modes)
+    -->
+    <allow-in-power-save package="com.facebook.services" />
+    <allow-in-power-save package="com.felicanetworks.mfc"/>
+    <allow-in-power-save package="com.felicanetworks.mfm.main"/>
+    <allow-in-power-save package="com.sony.uelog.service" />
+    <allow-in-power-save package="com.sonymobile.ctaserviceacore" />
+    <allow-in-power-save package="com.sonyericsson.updatecenter" />
+    <allow-in-power-save package="com.sonyericsson.soundenhancement" />
+    <allow-in-power-save package="com.sonyericsson.wappush" />
+    <allow-in-power-save package="com.sonymobile.gameenhancer.browser" />
+    <allow-in-power-save package="com.sonyericsson.mtp.extension.update" />
+    <allow-in-power-save package="com.sonymobile.mtp.extension.fotaupdate" />
+    <allow-in-power-save package="com.sonyericsson.mtp" />
+    <allow-in-power-save-except-idle package="com.facebook.appmanager" />
+    <allow-in-power-save-except-idle package="com.sonymobile.xperiasystemserver" />
+    <allow-in-power-save package="com.sonymobile.gotaidd.service" />
+    <allow-in-power-save package="com.sonymobile.xperiadeviceactions" />
+    <allow-in-power-save package="com.android.omadm.service" />
+    <allow-in-power-save package="com.android.sdm.plugins.connmo" />
+    <allow-in-power-save package="com.sonymobile.intelligent.backlight" />
+    <allow-in-power-save package="com.sonymobile.appprediction" />
+    <allow-in-power-save package="jp.co.sony.mc.usbextoutaudio" />
+    <allow-in-power-save package="com.sonymobile.wirelesschargemanager" />
+    <allow-in-power-save package="com.sonymobile.xperiaservices" />
+    <allow-in-power-save package="com.sonymobile.sidesenseapp" />
+    <allow-in-power-save package="com.sonymobile.dualdrive" />
+    <allow-in-power-save package="jp.co.sony.mc.ethernettetheringux" />
+</config>

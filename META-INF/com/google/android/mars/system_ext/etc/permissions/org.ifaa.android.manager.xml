@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Copyright 2021 Sony Corporation.
+    All rights, including trade secret rights, reserved
+-->
+<permissions>
+    <library name="org.ifaa.android.manager.permissions"
+             file="/system/system_ext/framework/org.ifaa.android.manager.jar"/>
+</permissions>

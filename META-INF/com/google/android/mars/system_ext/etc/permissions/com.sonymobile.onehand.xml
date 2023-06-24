@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Copyright (C) 2018 Sony Mobile Communications Inc.
+    All rights, including trade secret rights, reserved.
+-->
+<permissions>
+    <library name="com.sonymobile.onehand.api_1"
+        file="/system_ext/framework/com.sonymobile.onehand_impl.jar"/>
+</permissions>

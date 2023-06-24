@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+        Copyright 2021 Sony Corporation
+-->
+<permissions>
+        <library name="com.sonymobile.thermal_engine"
+                file="/system_ext/framework/com.sonymobile.thermal_engine.jar"></library>
+</permissions>
+
