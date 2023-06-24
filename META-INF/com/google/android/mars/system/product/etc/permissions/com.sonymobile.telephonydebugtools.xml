@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   Copyright (C) 2020 Sony Mobile Communications Inc.
+   All rights, including trade secret rights, reserved.
+-->
+
+<permissions>
+    <privapp-permissions package="com.sonymobile.telephonydebugtools">
+        <permission name="android.permission.BIND_SCREENING_SERVICE"/>
+    </privapp-permissions>
+</permissions>

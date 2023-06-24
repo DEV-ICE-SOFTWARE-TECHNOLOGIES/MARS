@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ©2020, 2021 Sony Corporation.
+  All rights, including trade secret rights, reserved.
+-->
+<permissions>
+  <privapp-permissions package="com.sonymobile.aes.entitlementcheck">
+    <permission name="android.permission.READ_PRIVILEGED_PHONE_STATE"/>
+    <permission name="android.permission.MODIFY_PHONE_STATE"/>
+  </privapp-permissions>
+</permissions>

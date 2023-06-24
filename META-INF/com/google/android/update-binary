@@ -1,56 +1,54 @@
-#!/system/bin/bash -i
+#!/sbin/sh
+
+# MARS Environment
+MARS_VER='23.06'
+MARS_VER_CODE=230625
+MARS_PATH=/dev/mars
+MARS_LOG=/sdcard/MARS.log
+BUSYBOX="/system_root/system/xbin/busybox"
+ZIPALIGN="/system_root/system/xbin/zipalign"
+SQLITE="/system_root/system/xbin/sqlite3"
+OUTFD=$2
+ZIPFILE=$3
 
 umask 022
 
-set -x
+ui_print() {
+  [ -n "$2" ] && MARS_LOG=$2
+  echo "$1" >>"$MARS_LOG"
+  echo -e "ui_print $1\nui_print" >>/proc/self/fd/$OUTFD
+}
 
-# To-Do
-# - Add support for TWRP Progress Bar
-# - Add own persistent location for Content
-# - Zipalign and dexopt APKs
+show_progress() { echo "progress $1 $2" >>"$OUTFD"; }
 
+set_progress() { echo "set_progress $1" >>"$OUTFD"; }
 
-# MARS Version
-MARS_VER='23.06'
-MARS_VER_CODE=230624
+show_progress 0.1 10
 
-# Color Codes
-BGBLACK='\033[40m'
-BGBLUE='\033[44m'
-BGCYAN='\033[46m'
-BGGREEN='\033[42m'
-BGPURPLE='\033[45m'
-BGRED='\033[41m'
-BGWHITE='\033[47m'
-BGYELLOW='\033[43m'
-BLACK='\033[0;30m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-GREEN='\033[0;32m'
-NOCOLOR='\033[0m'
-PURPLE='\033[0;35m'
-RED='\033[0;31m'
-WHITE='\033[0;37m'
-YELLOW='\033[0;33m'
+set_progress 0.1
+
+mkdir -p $MARS_PATH
+
+unzip -o $ZIPFILE -d $MARS_PATH >&2
+
+sleep 1
+
+mv -f $MARS_PATH/META-INF/com/google/android/mars/* $MARS_PATH 2>/dev/null
+
+rm -rf $MARS_PATH/META-INF
 
 # Print start message
-echo -e "${PURPLE}"
-echo ""
-echo -e "STARTING MARS-$MARS_VER"
-echo ""
-echo -e "${NOCOLOR}"
+ui_print " "
+ui_print "----- STARTING MARS-$MARS_VER"
+ui_print " "
 
 # Sync filesystem
 sync
 
-set_progress 0
-
-sleep 1
-
 # Mount partitions
-echo -e "${GREEN}"
-echo "MOUNTING PARTITIONS..."
-echo "${NOCOLOR}"
+ui_print "MOUNTING PARTITIONS..."
+ui_print " "
+
 mount -o rw /cache
 mount -o rw /data
 mount -o rw /product
@@ -58,28 +56,26 @@ mount -o rw /system_ext
 mount -o rw /system_root
 mount -o rw /vendor
 
-set_progress 1
-
-sleep 1
+set_progress 0.4
 
 # Wipe filesystems
-echo -e "${GREEN}"
-echo "WIPING FILESYSTEMS..."
-echo "${NOCOLOR}"
+ui_print "WIPING FILESYSTEMS..."
+ui_print " "
+
 rm -rf "/cache"
 rm -rf "/data/cache"
 rm -rf "/data/dalvik-cache"
 
 # Remove boot animation
-echo -e "${GREEN}"
-echo "REMOVING BOOT ANIMATION..."
-echo "${NOCOLOR}"
+ui_print "REMOVING BOOT ANIMATION..."
+ui_print " "
+
 rm -rf "/system_root/system/media/bootanimation.zip"
 
 # Remove unnecessary apps
-echo -e "${GREEN}"
-echo "REMOVING UNNECESSARY APPS..."
-echo "${NOCOLOR}"
+ui_print "REMOVING UNNECESSARY APPS..."
+ui_print " "
+
 rm -rf "/system_root/system/app/Stk"
 rm -rf "/product/app/Calculator"
 rm -rf "/product/app/DeskClock"
@@ -101,60 +97,133 @@ rm -rf "/product/priv-app/MiuiGallery"
 rm -rf "/product/priv-app/MiuiScanner"
 rm -rf "/product/priv-app/Weather"
 
-# Extract Zip Contents
-echo -e "${GREEN}"
-echo "EXTRACTING ZIP CONTENTS..."
-echo "${NOCOLOR}"
-unzip "/sdcard/META-INF.zip" "META-INF/com/google/android/mars/*" -d "/tmp/mars"
+set_progress 0.6
 
-set_progress 2
+# Busybox, Zipalign and SQLite3 Binary Check
 
-sleep 1
+if [ ! -f "$BUSYBOX" ]; then
+  ui_print "BUSYBOX NOT FOUND, INSTALLATION STARTS..."
+  ui_print " "
+
+  mv $MARS_PATH/busybox/* /system_root/system/xbin
+
+  sleep 1
+
+  if [ ! -f "$BUSYBOX" ]; then
+    ui_print "BUSYBOX INSTALLATION FAILED, ABORTING..."
+    ui_print " "
+  else
+    ui_print "BUSYBOX INSTALLATION SUCCESSFUL, CONTINUING..."
+    ui_print " "
+  fi
+
+else
+  ui_print "BUSYBOX ALREADY INSTALLED, SKIPPING..."
+  ui_print " "
+fi
+
+if [ ! -f "$ZIPALIGN" ]; then
+  ui_print "ZIPALIGN NOT FOUND, INSTALLATION STARTS..."
+  ui_print " "
+
+  mv $MARS_PATH/zipalign/* /system_root/system/xbin
+
+  sleep 1
+
+  if [ ! -f "$ZIPALIGN" ]; then
+    ui_print "ZIPALIGN INSTALLATION FAILED, ABORTING..."
+    ui_print " "
+  else
+    ui_print "ZIPALIGN INSTALLATION SUCCESSFUL, CONTINUING..."
+    ui_print " "
+  fi
+
+else
+  ui_print "ZIPALIGN ALREADY INSTALLED, SKIPPING..."
+  ui_print " "
+fi
+
+if [ ! -f "$SQLITE3" ]; then
+  ui_print "SQLITE3 NOT FOUND, INSTALLATION STARTS..."
+  ui_print " "
+
+  mv $MARS_PATH/sqlite3/* /system_root/system/xbin
+
+  sleep 1
+
+  if [ ! -f "$SQLITE3" ]; then
+    ui_print "SQLITE3 INSTALLATION FAILED, ABORTING..."
+    ui_print " "
+  else
+    ui_print "SQLITE3 INSTALLATION SUCCESSFUL, CONTINUING..."
+    ui_print " "
+  fi
+
+else
+  ui_print "SQLITE3 ALREADY INSTALLED, SKIPPING..."
+  ui_print " "
+fi
+
+set_progress 0.8
 
 # Extract System Contents
-echo -e "${GREEN}"
-echo "EXTRACTING SYSTEM CONTENTS..."
-echo "${NOCOLOR}"
-mv "tmp/mars/product/*" "/product"
-mv "tmp/mars/system_ext/*" "/system_ext"
-mv "tmp/mars/system/*" "/system_root/system"
-mv "tmp/mars/vendor/*" "/vendor"
+ui_print "EXTRACTING SYSTEM CONTENTS..."
+ui_print " "
 
-set_progress 3
-
-sleep 1
+mv $MARS_PATH/prop/* /tmp
+mv $MARS_PATH/magisk/* /tmp/magisk
+mv $MARS_PATH/initd/* /tmp/initd
+mv $MARS_PATH/patch/* /tmp/patch
+mv $MARS_PATH/system/product/* /product
+mv $MARS_PATH/system/system_ext/* /system_ext
+mv $MARS_PATH/system/system/* /system_root/system
+mv $MARS_PATH/system/vendor/* /vendor
 
 # Run patch prop script
-echo -e "${YELLOW}"
-echo "RUNNING PATCH PROP SCRIPT..."
-echo "${NOCOLOR}"
-unzip "/tmp/mars/patch/patch.zip" "META-INF/com/google/android/update-binary" -d "/tmp/patch"
-sh "/tmp/mars/patch/META-INF/com/google/android/update-binary" dummy 0 "/tmp/mars/patch/patch.zip"
+ui_print "RUNNING PATCH PROP SCRIPT..."
+ui_print " "
+
+unzip -o /tmp/patch/patch.zip -d /tmp/patch
+sh /tmp/patch/META-INF/com/google/android/update-binary dummy 1 /tmp/patch/patch.zip
 
 sleep 1
 
 # Magisk installation check
 if [ -d "/data/adb/magisk" ]; then
-  echo -e "${YELLOW}"
-  echo "MAGISK ALREADY INSTALLED, SKIPPING..."
-  echo "${NOCOLOR}"
+
+  ui_print "MAGISK ALREADY INSTALLED, SKIPPING..."
+  ui_print " "
+
 else
   # Install Magisk
-  echo -e "${YELLOW}"
-  echo "MAGISK NOT FOUND, INSTALLATION STARTS..."
-  echo "${NOCOLOR}"
-  unzip "/tmp/mars/magisk/magisk.zip" "META-INF/com/google/android/update-binary" -d "/tmp/magisk"
-  sh "/tmp/magisk/META-INF/com/google/android/update-binary" dummy 1 "/tmp/magisk/magisk.zip"
+  ui_print "MAGISK NOT FOUND, INSTALLATION STARTS..."
+  ui_print " "
+
+  unzip -o /tmp/magisk/magisk.zip -d /tmp/magisk
+  sh /tmp/magisk/META-INF/com/google/android/update-binary dummy 1 /tmp/magisk/magisk.zip
 fi
 
-set_progress 4
+# init.d installation check
+if [ -d "/data/adb/modules/init.d" ]; then
 
-sleep 1
+  ui_print "INIT.D ALREADY INSTALLED, SKIPPING..."
+  ui_print " "
+
+else
+  # Install init.d
+  ui_print "INIT.D NOT FOUND, INSTALLATION STARTS..."
+  ui_print " "
+
+  unzip -o /tmp/initd/initd.zip -d /tmp/initd
+  sh /tmp/initd/META-INF/com/google/android/update-binary dummy 1 /tmp/initd/initd.zip
+fi
+
+set_progress 0.9
 
 # Remount partitions
-echo -e "${GREEN}"
-echo "RE-MOUNTING PARTITIONS..."
-echo "${NOCOLOR}"
+ui_print "RE-MOUNTING PARTITIONS..."
+ui_print " "
+
 mount -o rw /cache
 mount -o rw /data
 mount -o rw /product
@@ -162,14 +231,9 @@ mount -o rw /system_ext
 mount -o rw /system_root
 mount -o rw /vendor
 
-set_progress 5
-
-sleep 1
-
 # Trim filesystems
-echo -e "${WHITE}"
-echo "TRIMMING FILESYSTEMS..."
-echo "${NOCOLOR}"
+ui_print "TRIMMING FILESYSTEMS..."
+ui_print " "
 
 /system/bin/busybox fstrim -v /cache
 /system/bin/busybox fstrim -v /data
@@ -178,14 +242,9 @@ echo "${NOCOLOR}"
 /system/bin/busybox fstrim -v /system_root
 /system/bin/busybox fstrim -v /vendor
 
-set_progress 6
-
-sleep 1
-
 # Unmount partitions
-echo -e "${GREEN}"
-echo "UNMOUNTING PARTITIONS..."
-echo "${NOCOLOR}"
+ui_print "UNMOUNTING PARTITIONS..."
+ui_print " "
 
 if [ -n "$(mount | grep /cache)" ]; then
   umount /cache
@@ -206,23 +265,13 @@ if [ -n "$(mount | grep /vendor)" ]; then
   umount /vendor
 fi
 
-set_progress 7
-
-sleep 1
-
 # Print completion message
-echo "----MARS-$MARS_VER INSTALLATION COMPLETED"
+ui_print "----- MARS-$MARS_VER INSTALLATION COMPLETED"
+ui_print " "
 
-set_progress 8
+# Cleanup of temporary files
+rm -rf "$MARS_PATH"
 
-sleep 1
-
-rm -rf "/tmp/mars"
-rm -rf "/tmp/patch"
-rm -rf "/tmp/magisk"
-
-set_progress 10
-
-sleep 1
+set_progress 1.0
 
 exit 0

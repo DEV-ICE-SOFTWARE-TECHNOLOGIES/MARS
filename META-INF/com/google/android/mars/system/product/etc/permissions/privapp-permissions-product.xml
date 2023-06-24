@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- for the partition: /product -->
+<permissions>
+    <privapp-permissions package="com.sonymobile.extmonitorapp">
+        <permission name="android.permission.MANAGE_USB"/>
+        <permission name="android.permission.MODIFY_AUDIO_ROUTING"/>
+    </privapp-permissions>
+
+    <privapp-permissions package="com.sonymobile.moviecreator">
+        <permission name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS"/>
+        <permission name="android.permission.WRITE_MEDIA_STORAGE"/>
+    </privapp-permissions>
+
+    <privapp-permissions package="com.sonymobile.photopro">
+        <permission name="android.permission.WRITE_SECURE_SETTINGS"/>
+    </privapp-permissions>
+
+    <privapp-permissions package="com.sonymobile.thermalwarningui">
+        <permission name="android.permission.CHANGE_COMPONENT_ENABLED_STATE"/>
+        <permission name="android.permission.MANAGE_USB"/>
+        <permission name="android.permission.REAL_GET_TASKS"/>
+        <permission name="android.permission.START_ACTIVITIES_FROM_BACKGROUND"/>
+        <permission name="android.permission.WRITE_SECURE_SETTINGS"/>
+    </privapp-permissions>
+
+    <privapp-permissions package="com.sonymobile.wifi">
+        <permission name="android.permission.OVERRIDE_WIFI_CONFIG"/>
+    </privapp-permissions>
+
+    <privapp-permissions package="com.sonymobile.wifi.presetnetwork">
+        <permission name="android.permission.NETWORK_CARRIER_PROVISIONING"/>
+    </privapp-permissions>
+
+    <privapp-permissions package="com.sonymobile.xvrservice">
+        <permission name="android.permission.INTERACT_ACROSS_USERS"/>
+        <permission name="com.sonymobile.permission.SECURE_DATA_MANAGER"/>
+    </privapp-permissions>
+
+</permissions>

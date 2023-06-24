@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+ <!--
+    Copyright (C) 2021 Sony Mobile Communications Inc.
+    All rights, including trade secret rights, reserved.
+ -->
+<permissions>
+    <privapp-permissions package="com.sonyericsson.crashmonitor">
+        <permission name="android.permission.WRITE_SECURE_SETTINGS"/>
+        <permission name="android.permission.READ_PRIVILEGED_PHONE_STATE"/>
+        <permission name="android.permission.INTERACT_ACROSS_USERS"/>
+        <permission name="android.permission.MANAGE_ROLLBACKS"/>
+    </privapp-permissions>
+</permissions>
