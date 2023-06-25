@@ -1,8 +1,11 @@
 #!/sbin/sh
 
-# MARS Environment
+set -x
+
+umask 022
+
 MARS_VER='23.06'
-MARS_VER_CODE=230625
+MARS_VER_CODE=230626
 MARS_PATH=/tmp/mars
 MARS_LOG=/sdcard/MARS.log
 MARS_PROP=$MARS_PATH/prop/mars.prop
@@ -16,366 +19,335 @@ ZIPALIGN="/system_root/system/xbin/zipalign"
 OUTFD=$2
 ZIPFILE=$3
 
-set -x
-
-umask 022
-
 ui_print() {
   [ -n "$2" ] && MARS_LOG=$2
   echo "$1" >>"$MARS_LOG"
   echo -e "ui_print $1\nui_print" >>/proc/self/fd/$OUTFD
 }
 
-show_progress() { echo "progress $1 $2" >>"$OUTFD"; }
+_setup() {
+  show_progress() { echo "progress $1 $2" >>"$OUTFD"; }
 
-set_progress() { echo "set_progress $1" >>"$OUTFD"; }
+  set_progress() { echo "set_progress $1" >>"$OUTFD"; }
 
-show_progress 0.1 10
+  show_progress 0.1 10
 
-set_progress 0.1
+  mkdir -p $MARS_PATH
 
-mkdir -p $MARS_PATH
-
-unzip -o $ZIPFILE -d $MARS_PATH >&2
-
-sleep 1
-
-mv -f $MARS_PATH/META-INF/com/google/android/mars/* $MARS_PATH 2>/dev/null
-
-rm -rf $MARS_PATH/META-INF
-
-chmod -R 755 /tmp/mars
-
-# Print start message
-ui_print " "
-ui_print "----- STARTING MARS-$MARS_VER"
-ui_print " "
-
-# Sync filesystem
-sync
-
-# Mount partitions
-ui_print "MOUNTING PARTITIONS..."
-ui_print " "
-
-mount -o rw /cache
-mount -o rw /data
-mount -o rw /product
-mount -o rw /system_ext
-mount -o rw /system_root
-mount -o rw /vendor
-
-set_progress 0.4
-
-# Wipe filesystems
-ui_print "WIPING FILESYSTEMS..."
-ui_print " "
-
-rm -rf "/cache"
-rm -rf "/data/cache"
-rm -rf "/data/dalvik-cache"
-rm -rf "/data/data"
-
-# Remove boot animation
-ui_print "REMOVING BOOT ANIMATION..."
-ui_print " "
-
-rm -rf "/system_root/system/media/bootanimation.zip"
-
-# Remove unnecessary apps
-ui_print "REMOVING UNNECESSARY APPS..."
-ui_print " "
-
-rm -rf "/system_root/system/app/Stk"
-rm -rf "/product/app/Calculator"
-rm -rf "/product/app/DeskClock"
-rm -rf "/product/app/Email"
-rm -rf "/product/app/FileExplorer"
-rm -rf "/product/app/Health"
-rm -rf "/product/app/MiuiVideoGlobal"
-rm -rf "/product/app/MiuiCompass"
-rm -rf "/product/app/Notes"
-rm -rf "/product/priv-app/Contacts"
-rm -rf "/product/priv-app/Calendar"
-rm -rf "/product/priv-app/SoundRecorder"
-rm -rf "/product/priv-app/Mms"
-rm -rf "/product/priv-app/Music"
-rm -rf "/product/priv-app/MiService"
-rm -rf "/product/priv-app/MiMover"
-rm -rf "/product/priv-app/MiBrowserGlobal"
-rm -rf "/product/priv-app/MiuiGallery"
-rm -rf "/product/priv-app/MiuiScanner"
-rm -rf "/product/priv-app/Weather"
-
-set_progress 0.6
-
-# Busybox, Zipalign and SQLite3 Binary Check
-
-if [ ! -f "$BUSYBOX" ]; then
-  ui_print "BUSYBOX NOT FOUND, INSTALLATION STARTS..."
-  ui_print " "
-
-  mv $MARS_PATH/busybox/* /system_root/system/xbin
+  unzip -o $ZIPFILE -d $MARS_PATH >&2
 
   sleep 1
+
+  mv -f $MARS_PATH/META-INF/com/google/android/mars/* $MARS_PATH 2>/dev/null
+
+  rm -rf $MARS_PATH/META-INF
+
+  chmod -R 755 /tmp/mars
+
+  ui_print " "
+  ui_print "----- STARTING MARS-$MARS_VER"
+  ui_print " "
+  sleep 1
+}
+
+_sync() {
+  sync
+  sleep 1
+}
+
+_mount() {
+  ui_print "REMOUNTING PARTITIONS..."
+  ui_print " "
+
+  mount -o rw /cache
+  mount -o rw /data
+  mount -o rw /product
+  mount -o rw /system_ext
+  mount -o rw /system_root
+  mount -o rw /vendor
+  sleep 1
+}
+
+_debloat() {
+  ui_print "DEBLOATING OS..."
+  ui_print " "
+
+  rm -rf "/system_root/system/media/bootanimation.zip"
+  rm -rf "/system_root/system/app/Stk"
+  rm -rf "/product/app/Calculator"
+  rm -rf "/product/app/DeskClock"
+  rm -rf "/product/app/Email"
+  rm -rf "/product/app/FileExplorer"
+  rm -rf "/product/app/Health"
+  rm -rf "/product/app/MiuiVideoGlobal"
+  rm -rf "/product/app/MiuiCompass"
+  rm -rf "/product/app/Notes"
+  rm -rf "/product/priv-app/Contacts"
+  rm -rf "/product/priv-app/Calendar"
+  rm -rf "/product/priv-app/SoundRecorder"
+  rm -rf "/product/priv-app/Mms"
+  rm -rf "/product/priv-app/Music"
+  rm -rf "/product/priv-app/MiService"
+  rm -rf "/product/priv-app/MiMover"
+  rm -rf "/product/priv-app/MiBrowserGlobal"
+  rm -rf "/product/priv-app/MiuiGallery"
+  rm -rf "/product/priv-app/MiuiScanner"
+  rm -rf "/product/priv-app/Weather"
+  sleep 1
+}
+
+_tools() {
+  ui_print "DEPLOYING TOOLS..."
+  ui_print " "
 
   if [ ! -f "$BUSYBOX" ]; then
-    ui_print "BUSYBOX INSTALLATION FAILED, ABORTING..."
+    ui_print "BUSYBOX NOT FOUND, INSTALLATION STARTS..."
     ui_print " "
+
+    mv $MARS_PATH/busybox/* /system_root/system/xbin
+
+    sleep 1
+
+    if [ ! -f "$BUSYBOX" ]; then
+      ui_print "BUSYBOX INSTALLATION FAILED, ABORTING..."
+      ui_print " "
+    else
+      ui_print "BUSYBOX INSTALLATION SUCCESSFUL, CONTINUING..."
+      ui_print " "
+    fi
+
   else
-    ui_print "BUSYBOX INSTALLATION SUCCESSFUL, CONTINUING..."
+    ui_print "BUSYBOX ALREADY INSTALLED, SKIPPING..."
     ui_print " "
   fi
-
-else
-  ui_print "BUSYBOX ALREADY INSTALLED, SKIPPING..."
-  ui_print " "
-fi
-
-if [ ! -f "$ZIPALIGN" ]; then
-  ui_print "ZIPALIGN NOT FOUND, INSTALLATION STARTS..."
-  ui_print " "
-
-  mv $MARS_PATH/zipalign/* /system_root/system/xbin
-
-  sleep 1
 
   if [ ! -f "$ZIPALIGN" ]; then
-    ui_print "ZIPALIGN INSTALLATION FAILED, ABORTING..."
+    ui_print "ZIPALIGN NOT FOUND, INSTALLATION STARTS..."
     ui_print " "
+
+    mv $MARS_PATH/zipalign/* /system_root/system/xbin
+
+    sleep 1
+
+    if [ ! -f "$ZIPALIGN" ]; then
+      ui_print "ZIPALIGN INSTALLATION FAILED, ABORTING..."
+      ui_print " "
+    else
+      ui_print "ZIPALIGN INSTALLATION SUCCESSFUL, CONTINUING..."
+      ui_print " "
+    fi
+
   else
-    ui_print "ZIPALIGN INSTALLATION SUCCESSFUL, CONTINUING..."
+    ui_print "ZIPALIGN ALREADY INSTALLED, SKIPPING..."
     ui_print " "
   fi
-
-else
-  ui_print "ZIPALIGN ALREADY INSTALLED, SKIPPING..."
-  ui_print " "
-fi
-
-if [ ! -f "$SQLITE3" ]; then
-  ui_print "SQLITE3 NOT FOUND, INSTALLATION STARTS..."
-  ui_print " "
-
-  mv $MARS_PATH/sqlite3/* /system_root/system/xbin
-
-  sleep 1
 
   if [ ! -f "$SQLITE3" ]; then
-    ui_print "SQLITE3 INSTALLATION FAILED, ABORTING..."
+    ui_print "SQLITE3 NOT FOUND, INSTALLATION STARTS..."
     ui_print " "
+
+    mv $MARS_PATH/sqlite3/* /system_root/system/xbin
+
+    sleep 1
+
+    if [ ! -f "$SQLITE3" ]; then
+      ui_print "SQLITE3 INSTALLATION FAILED, ABORTING..."
+      ui_print " "
+    else
+      ui_print "SQLITE3 INSTALLATION SUCCESSFUL, CONTINUING..."
+      ui_print " "
+    fi
+
   else
-    ui_print "SQLITE3 INSTALLATION SUCCESSFUL, CONTINUING..."
+    ui_print "SQLITE3 ALREADY INSTALLED, SKIPPING..."
     ui_print " "
   fi
+  sleep 1
+}
 
-else
-  ui_print "SQLITE3 ALREADY INSTALLED, SKIPPING..."
+_extract() {
+  ui_print "EXTRACTING SYSTEM CONTENTS..."
   ui_print " "
-fi
 
+  mv $MARS_PATH/system/product/* /product
+  mv $MARS_PATH/system/system_ext/* /system_ext
+  mv $MARS_PATH/system/system/* /system_root/system
+  mv $MARS_PATH/system/vendor/* /vendor
+  sleep 1
+}
+
+_patch() {
+  ui_print "RUNNING PATCH PROP SCRIPT..."
+  ui_print " "
+
+  ex() {
+    chmod 0644 "$SYSTEM_PROP"
+    ui_print "ERROR: $@, script aborted!"
+    exit 1
+  }
+
+  ui_print "SEARCHING FOR MARS PROP..."
+
+  test -s "$MARS_PROP" && ui_print "..$MARS_PROP FOUND" || ex " $MARS_PROP NOT FOUND OR EMPTY"
+
+  ANSWER=$(sed "s/BACKUP=//p;d" "$MARS_PROP")
+
+  backup() {
+    echo "# BACKUP OF $SYSTEM_PROP CREATED AT $(date) MARS PATCH $ver" >"$1" || ex "CANNOT WRITE BACKUP FILE $1" &&
+      (cat "$SYSTEM_PROP" >>"$1" && ui_print "..$SYSTEM_PROP BACKED UP AT $1.")
+  }
+
+  case "$ANSWER" in
+  y | Y | yes | Yes | YES)
+    backup "${MARS_PROP%/*}/${SYSTEM_PROP##*/}.backup"
+    ;;
+
+  n | N | no | No | NO) ;;
+
+  *)
+    [[ -z "$ANSWER" || ! -d $(dirname "$ANSWER") ]] && ex "PATH EMPTY OR NOT EXISTING" || backup "$ANSWER"
+    ;;
+  esac
+
+  ui_print "SCANNING $MARS_PROP..."
+  ui_print ""
+
+  sed -r '/(^#|^ *$|^BACKUP=)/d;/(.*=.*|^\!|^\@.*\|.*|^\$.*\|.*)/!d' "$MARS_PROP" | while read line; do
+    if echo "$line" | grep -q '^\!'; then
+      entry=$(echo "${line#?}" | sed -e 's/[\/&]/\\&/g')
+      grep -q "$entry" "$SYSTEM_PROP" && (sed "/$entry/d" -i "$SYSTEM_PROP" && ui_print "PROPS CONTAINING \"$entry\" REMOVED")
+
+    elif echo "$line" | grep -q '^\@'; then
+      entry=$(echo "${line#?}" | sed -e 's/[\/&]/\\&/g')
+      var=$(echo "$entry" | cut -d\| -f1)
+      app=$(echo "$entry" | cut -d\| -f2)
+      grep -q "$var" "$SYSTEM_PROP" && (sed "s/^$var=.*$/&$app/" -i "$SYSTEM_PROP" && ui_print "\"$app\" APPENDED TO VALUE OF \"$var\"")
+
+    elif echo "$line" | grep -q '^\$'; then
+      entry=$(echo "${line#?}" | sed -e 's/[\/&]/\\&/g')
+      var=$(echo "$entry" | cut -d\| -f1)
+      new=$(echo "$entry" | cut -d\| -f2)
+      grep -q "$var=" "$SYSTEM_PROP" && (sed "s/^$var=.*$/$var=$new/" -i "$SYSTEM_PROP" && ui_print "VALUE OF \"$var\" CHANGED TO \"$new\"")
+
+    else
+      var=$(echo "$line" | cut -d= -f1)
+      if grep -q "$var" "$SYSTEM_PROP"; then
+        grep -q $(grep "$var" "$MARS_PROP") "$SYSTEM_PROP" || (sed "s/^$var=.*$/$line/" -i "$SYSTEM_PROP" && ui_print "VALUE OF \"$var\" OVERWRITTEN")
+      else
+        echo "$line" >>"$SYSTEM_PROP" && ui_print "PROP \"$line\" ADDED"
+      fi
+    fi
+  done
+
+  sed '/^ *$/d' -i "$SYSTEM_PROP"
+
+  ui_print "PROPS SUCCESSFULLY PATCHED"
+  ui_print " "
+
+  echo "#" >>"$SYSTEM_PROP"
+
+  chmod 0644 "$SYSTEM_PROP" && ui_print "ORIGINAL PERMISSIONS FOR $SYSTEM_PROP RESTORED"
+
+  sleep 1
+}
+
+_magisk() {
+  if [ -d "/data/adb/magisk" ]; then
+
+    ui_print "MAGISK ALREADY INSTALLED, SKIPPING..."
+    ui_print " "
+
+  else
+    ui_print "MAGISK NOT FOUND, INSTALLATION STARTS..."
+    ui_print " "
+
+    sh $MARS_PATH/magisk/META-INF/com/google/android/update-binary dummy 1 $MARS_PATH/magisk/magisk.zip
+  fi
+  sleep 1
+}
+
+_optimize() {
+  ui_print "OPTIMIZING APPS..."
+  ui_print " "
+
+  su -c cmd package bg-dexopt-job
+
+  for apk in "$MARS_PATH/system_root/" 'system_ext/priv-app/*/*.apk' 'system/app/*/*.apk' 'system/priv-app/*/*.apk' 'system/product/priv-app/*/*.apk' 'system/product/app/*/*.apk'; do
+    $zipalign -c -v 4 "$apk" 1>&2
+  done
+
+  ui_print "TRIMMING FILESYSTEMS..."
+  ui_print " "
+
+  /system/bin/busybox fstrim -v /cache
+  /system/bin/busybox fstrim -v /data
+  /system/bin/busybox fstrim -v /product
+  /system/bin/busybox fstrim -v /system_ext
+  /system/bin/busybox fstrim -v /system_root
+  /system/bin/busybox fstrim -v /vendor
+  sleep 1
+}
+
+_unmount() {
+  ui_print "UNMOUNTING PARTITIONS..."
+  ui_print " "
+
+  if [ -n "$(mount | grep /cache)" ]; then
+    umount /cache
+  fi
+  if [ -n "$(mount | grep /data)" ]; then
+    umount /data
+  fi
+  if [ -n "$(mount | grep /product)" ]; then
+    umount /product
+  fi
+  if [ -n "$(mount | grep /system_ext)" ]; then
+    umount /system_ext
+  fi
+  if [ -n "$(mount | grep /system_root)" ]; then
+    umount /system_root
+  fi
+  if [ -n "$(mount | grep /vendor)" ]; then
+    umount /vendor
+  fi
+  sleep 1
+}
+
+_cleanup() {
+  ui_print "...CLEANING AND WIPE"
+  ui_print " "
+
+  rm -rf "/cache"
+  rm -rf "/data/cache"
+  rm -rf "/data/dalvik-cache"
+  rm -rf "/data/data"
+  rm -rf "$MARS_PATH"
+}
+
+_setup
+_sync
+_mount
+set_progress 0.1
+_debloat
+set_progress 0.2
+_tools
+set_progress 0.3
+_extract
+set_progress 0.4
+_patch
+set_progress 0.5
+_magisk
+set_progress 0.6
+_mount
+set_progress 0.7
+_optimize
 set_progress 0.8
-
-# Extract System Contents
-ui_print "EXTRACTING SYSTEM CONTENTS..."
-ui_print " "
-
-mv $MARS_PATH/system/product/* /product
-mv $MARS_PATH/system/system_ext/* /system_ext
-mv $MARS_PATH/system/system/* /system_root/system
-mv $MARS_PATH/system/vendor/* /vendor
-
-# Run patch prop script
-ui_print "RUNNING PATCH PROP SCRIPT..."
-ui_print " "
-
-ex() {
- chmod 0644 "$SYSTEM_PROP"
-	ui_print "ERROR: $@, script aborted!"
-	exit 1
-}
-
-ui_print "SEARCHING FOR MARS PROP..."
-
-test -s "$MARS_PROP" && ui_print "..$MARS_PROP FOUND" || ex " $MARS_PROP NOT FOUND OR EMPTY"
-
-ANSWER=$(sed "s/BACKUP=//p;d" "$MARS_PROP")
-
-backup() {
-	echo "# BACKUP OF $SYSTEM_PROP CREATED AT `date` MARS PATCH $ver" > "$1" || ex "CANNOT WRITE BACKUP FILE $1" && \
-	(cat "$SYSTEM_PROP" >> "$1" && ui_print "..$SYSTEM_PROP BACKED UP AT $1.")
-}
-
-case "$ANSWER" in
-y|Y|yes|Yes|YES)
-	backup "${MARS_PROP%/*}/${SYSTEM_PROP##*/}.backup"
-	;;
-
-n|N|no|No|NO)
-	;;
-
-*)
-	[[ -z "$ANSWER" || ! -d $(dirname "$ANSWER") ]] && ex "PATH EMPTY OR NOT EXISTING" || backup "$ANSWER"
-	;;
-esac
-
-ui_print "SCANNING $MARS_PROP..."
-ui_print ""
-
-sed -r '/(^#|^ *$|^BACKUP=)/d;/(.*=.*|^\!|^\@.*\|.*|^\$.*\|.*)/!d' "$MARS_PROP" | while read line
-do
-	if echo "$line" | grep -q '^\!'
-	then
-		entry=$(echo "${line#?}" | sed -e 's/[\/&]/\\&/g')
-		grep -q "$entry" "$SYSTEM_PROP" && (sed "/$entry/d" -i "$SYSTEM_PROP" && ui_print "PROPS CONTAINING \"$entry\" REMOVED")
-
-	elif echo "$line" | grep -q '^\@'
-	then
-		entry=$(echo "${line#?}" | sed -e 's/[\/&]/\\&/g')
-		var=$(echo "$entry" | cut -d\| -f1)
-		app=$(echo "$entry" | cut -d\| -f2)
-		grep -q "$var" "$SYSTEM_PROP" && (sed "s/^$var=.*$/&$app/" -i "$SYSTEM_PROP" && ui_print "\"$app\" APPENDED TO VALUE OF \"$var\"")
-
-	elif echo "$line" | grep -q '^\$'
-	then
-		entry=$(echo "${line#?}" | sed -e 's/[\/&]/\\&/g')
-		var=$(echo "$entry" | cut -d\| -f1)
-		new=$(echo "$entry" | cut -d\| -f2)
-		grep -q "$var=" "$SYSTEM_PROP" && (sed "s/^$var=.*$/$var=$new/" -i "$SYSTEM_PROP" && ui_print "VALUE OF \"$var\" CHANGED TO \"$new\"")
-
-	else
-		var=$(echo "$line" | cut -d= -f1)
-		if grep -q "$var" "$SYSTEM_PROP"
-		then
-			grep -q $(grep "$var" "$MARS_PROP") "$SYSTEM_PROP" || (sed "s/^$var=.*$/$line/" -i "$SYSTEM_PROP" && ui_print "VALUE OF \"$var\" OVERWRITTEN")
-		else
-			echo "$line" >> "$SYSTEM_PROP" && ui_print "PROP \"$line\" ADDED"
-		fi
-	fi
-done
-
-sed '/^ *$/d' -i "$SYSTEM_PROP"
-
-
-ui_print "PROPS SUCCESSFULLY PATCHED"
-ui_print " "
-
-echo "#" >> "$SYSTEM_PROP"
-
-chmod 0644 "$SYSTEM_PROP" && ui_print "ORIGINAL PERMISSIONS FOR $SYSTEM_PROP RESTORED"
-
-sleep 1
-
-# Magisk installation check
-if [ -d "/data/adb/magisk" ]; then
-
-  ui_print "MAGISK ALREADY INSTALLED, SKIPPING..."
-  ui_print " "
-
-else
-  # Install Magisk
-  ui_print "MAGISK NOT FOUND, INSTALLATION STARTS..."
-  ui_print " "
-
-  sh $MARS_PATH/magisk/META-INF/com/google/android/update-binary dummy 1 $MARS_PATH/magisk/magisk.zip
-fi
-
-# init.d installation check
-if [ -d "/data/adb/modules/InitdInjector" ]; then
-
-  ui_print "INIT.D ALREADY INSTALLED, SKIPPING..."
-  ui_print " "
-
-else
-  # Install init.d
-  ui_print "INIT.D NOT FOUND, INSTALLATION STARTS..."
-  ui_print " "
-
-  sh $MARS_PATH/initd/META-INF/com/google/android/update-binary dummy 1 $MARS_PATH/initd/initd.zip
-fi
-
-# ReVanced YT Music installation check
-if [ -d "/data/adb/modules/ReVanced_YTMusic" ]; then
-
-  ui_print "REVANCED YT MUSIC ALREADY INSTALLED, SKIPPING..."
-  ui_print " "
-
-else
-  # Install ReVanced YT Music
-  ui_print "REVANCED YT MUSIC NOT FOUND, INSTALLATION STARTS..."
-  ui_print " "
-
-  sh $MARS_PATH/revanced/YTMusic/META-INF/com/google/android/update-binary dummy 1 $MARS_PATH/revanced/YTMusic/YTMusic.zip
-fi
-
-# Mindetach installation check
-if [ -d "/data/adb/modules/Mindetach" ]; then
-
-  ui_print "MINDETACH ALREADY INSTALLED, SKIPPING..."
-  ui_print " "
-
-else
-  # Install Mindetach
-  ui_print "MINDETACH NOT FOUND, INSTALLATION STARTS..."
-  ui_print " "
-
-  sh $MARS_PATH/revanced/mindetach/META-INF/com/google/android/update-binary dummy 1 $MARS_PATH/revanced/mindetach/mindetach.zip
-fi
-
+_unmount
 set_progress 0.9
+_cleanup
+set_progress 1.0
 
-# Remount partitions
-ui_print "RE-MOUNTING PARTITIONS..."
-ui_print " "
-
-mount -o rw /cache
-mount -o rw /data
-mount -o rw /product
-mount -o rw /system_ext
-mount -o rw /system_root
-mount -o rw /vendor
-
-# Trim filesystems
-ui_print "TRIMMING FILESYSTEMS..."
-ui_print " "
-
-/system/bin/busybox fstrim -v /cache
-/system/bin/busybox fstrim -v /data
-/system/bin/busybox fstrim -v /product
-/system/bin/busybox fstrim -v /system_ext
-/system/bin/busybox fstrim -v /system_root
-/system/bin/busybox fstrim -v /vendor
-
-# Unmount partitions
-ui_print "UNMOUNTING PARTITIONS..."
-ui_print " "
-
-if [ -n "$(mount | grep /cache)" ]; then
-  umount /cache
-fi
-if [ -n "$(mount | grep /data)" ]; then
-  umount /data
-fi
-if [ -n "$(mount | grep /product)" ]; then
-  umount /product
-fi
-if [ -n "$(mount | grep /system_ext)" ]; then
-  umount /system_ext
-fi
-if [ -n "$(mount | grep /system_root)" ]; then
-  umount /system_root
-fi
-if [ -n "$(mount | grep /vendor)" ]; then
-  umount /vendor
-fi
-
-# Print completion message
 ui_print "----- MARS-$MARS_VER INSTALLATION COMPLETED"
 ui_print " "
-
-# Cleanup of temporary files
-rm -rf "$MARS_PATH"
-
-set_progress 1.0
 
 exit 0
