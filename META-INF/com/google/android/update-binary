@@ -3,13 +3,20 @@
 # MARS Environment
 MARS_VER='23.06'
 MARS_VER_CODE=230625
-MARS_PATH=/dev/mars
+MARS_PATH=/tmp/mars
 MARS_LOG=/sdcard/MARS.log
+MARS_PROP=$MARS_PATH/prop/mars.prop
+SYSTEM_PROP=/system_root/system/build.prop
+PRODUCT_PROP=/system_root/product/etc/build.prop
+SYSTEM_EXT_PROP=/system_root/system_ext/etc/build.prop
+VENDOR_PROP=/system_root/vendor/build.prop
 BUSYBOX="/system_root/system/xbin/busybox"
-ZIPALIGN="/system_root/system/xbin/zipalign"
 SQLITE="/system_root/system/xbin/sqlite3"
+ZIPALIGN="/system_root/system/xbin/zipalign"
 OUTFD=$2
 ZIPFILE=$3
+
+set -x
 
 umask 022
 
@@ -36,6 +43,8 @@ sleep 1
 mv -f $MARS_PATH/META-INF/com/google/android/mars/* $MARS_PATH 2>/dev/null
 
 rm -rf $MARS_PATH/META-INF
+
+chmod -R 755 /tmp/mars
 
 # Print start message
 ui_print " "
@@ -65,6 +74,7 @@ ui_print " "
 rm -rf "/cache"
 rm -rf "/data/cache"
 rm -rf "/data/dalvik-cache"
+rm -rf "/data/data"
 
 # Remove boot animation
 ui_print "REMOVING BOOT ANIMATION..."
@@ -170,10 +180,6 @@ set_progress 0.8
 ui_print "EXTRACTING SYSTEM CONTENTS..."
 ui_print " "
 
-mv $MARS_PATH/prop/* /tmp
-mv $MARS_PATH/magisk/* /tmp/magisk
-mv $MARS_PATH/initd/* /tmp/initd
-mv $MARS_PATH/patch/* /tmp/patch
 mv $MARS_PATH/system/product/* /product
 mv $MARS_PATH/system/system_ext/* /system_ext
 mv $MARS_PATH/system/system/* /system_root/system
@@ -183,8 +189,80 @@ mv $MARS_PATH/system/vendor/* /vendor
 ui_print "RUNNING PATCH PROP SCRIPT..."
 ui_print " "
 
-unzip -o /tmp/patch/patch.zip -d /tmp/patch
-sh /tmp/patch/META-INF/com/google/android/update-binary dummy 1 /tmp/patch/patch.zip
+ex() {
+ chmod 0644 "$SYSTEM_PROP"
+	ui_print "ERROR: $@, script aborted!"
+	exit 1
+}
+
+ui_print "SEARCHING FOR MARS PROP..."
+
+test -s "$MARS_PROP" && ui_print "..$MARS_PROP FOUND" || ex " $MARS_PROP NOT FOUND OR EMPTY"
+
+ANSWER=$(sed "s/BACKUP=//p;d" "$MARS_PROP")
+
+backup() {
+	echo "# BACKUP OF $SYSTEM_PROP CREATED AT `date` MARS PATCH $ver" > "$1" || ex "CANNOT WRITE BACKUP FILE $1" && \
+	(cat "$SYSTEM_PROP" >> "$1" && ui_print "..$SYSTEM_PROP BACKED UP AT $1.")
+}
+
+case "$ANSWER" in
+y|Y|yes|Yes|YES)
+	backup "${MARS_PROP%/*}/${SYSTEM_PROP##*/}.backup"
+	;;
+
+n|N|no|No|NO)
+	;;
+
+*)
+	[[ -z "$ANSWER" || ! -d $(dirname "$ANSWER") ]] && ex "PATH EMPTY OR NOT EXISTING" || backup "$ANSWER"
+	;;
+esac
+
+ui_print "SCANNING $MARS_PROP..."
+ui_print ""
+
+sed -r '/(^#|^ *$|^BACKUP=)/d;/(.*=.*|^\!|^\@.*\|.*|^\$.*\|.*)/!d' "$MARS_PROP" | while read line
+do
+	if echo "$line" | grep -q '^\!'
+	then
+		entry=$(echo "${line#?}" | sed -e 's/[\/&]/\\&/g')
+		grep -q "$entry" "$SYSTEM_PROP" && (sed "/$entry/d" -i "$SYSTEM_PROP" && ui_print "PROPS CONTAINING \"$entry\" REMOVED")
+
+	elif echo "$line" | grep -q '^\@'
+	then
+		entry=$(echo "${line#?}" | sed -e 's/[\/&]/\\&/g')
+		var=$(echo "$entry" | cut -d\| -f1)
+		app=$(echo "$entry" | cut -d\| -f2)
+		grep -q "$var" "$SYSTEM_PROP" && (sed "s/^$var=.*$/&$app/" -i "$SYSTEM_PROP" && ui_print "\"$app\" APPENDED TO VALUE OF \"$var\"")
+
+	elif echo "$line" | grep -q '^\$'
+	then
+		entry=$(echo "${line#?}" | sed -e 's/[\/&]/\\&/g')
+		var=$(echo "$entry" | cut -d\| -f1)
+		new=$(echo "$entry" | cut -d\| -f2)
+		grep -q "$var=" "$SYSTEM_PROP" && (sed "s/^$var=.*$/$var=$new/" -i "$SYSTEM_PROP" && ui_print "VALUE OF \"$var\" CHANGED TO \"$new\"")
+
+	else
+		var=$(echo "$line" | cut -d= -f1)
+		if grep -q "$var" "$SYSTEM_PROP"
+		then
+			grep -q $(grep "$var" "$MARS_PROP") "$SYSTEM_PROP" || (sed "s/^$var=.*$/$line/" -i "$SYSTEM_PROP" && ui_print "VALUE OF \"$var\" OVERWRITTEN")
+		else
+			echo "$line" >> "$SYSTEM_PROP" && ui_print "PROP \"$line\" ADDED"
+		fi
+	fi
+done
+
+sed '/^ *$/d' -i "$SYSTEM_PROP"
+
+
+ui_print "PROPS SUCCESSFULLY PATCHED"
+ui_print " "
+
+echo "#" >> "$SYSTEM_PROP"
+
+chmod 0644 "$SYSTEM_PROP" && ui_print "ORIGINAL PERMISSIONS FOR $SYSTEM_PROP RESTORED"
 
 sleep 1
 
@@ -199,12 +277,11 @@ else
   ui_print "MAGISK NOT FOUND, INSTALLATION STARTS..."
   ui_print " "
 
-  unzip -o /tmp/magisk/magisk.zip -d /tmp/magisk
-  sh /tmp/magisk/META-INF/com/google/android/update-binary dummy 1 /tmp/magisk/magisk.zip
+  sh $MARS_PATH/magisk/META-INF/com/google/android/update-binary dummy 1 $MARS_PATH/magisk/magisk.zip
 fi
 
 # init.d installation check
-if [ -d "/data/adb/modules/init.d" ]; then
+if [ -d "/data/adb/modules/InitdInjector" ]; then
 
   ui_print "INIT.D ALREADY INSTALLED, SKIPPING..."
   ui_print " "
@@ -214,8 +291,35 @@ else
   ui_print "INIT.D NOT FOUND, INSTALLATION STARTS..."
   ui_print " "
 
-  unzip -o /tmp/initd/initd.zip -d /tmp/initd
-  sh /tmp/initd/META-INF/com/google/android/update-binary dummy 1 /tmp/initd/initd.zip
+  sh $MARS_PATH/initd/META-INF/com/google/android/update-binary dummy 1 $MARS_PATH/initd/initd.zip
+fi
+
+# ReVanced YT Music installation check
+if [ -d "/data/adb/modules/ReVanced_YTMusic" ]; then
+
+  ui_print "REVANCED YT MUSIC ALREADY INSTALLED, SKIPPING..."
+  ui_print " "
+
+else
+  # Install ReVanced YT Music
+  ui_print "REVANCED YT MUSIC NOT FOUND, INSTALLATION STARTS..."
+  ui_print " "
+
+  sh $MARS_PATH/revanced/YTMusic/META-INF/com/google/android/update-binary dummy 1 $MARS_PATH/revanced/YTMusic/YTMusic.zip
+fi
+
+# Mindetach installation check
+if [ -d "/data/adb/modules/Mindetach" ]; then
+
+  ui_print "MINDETACH ALREADY INSTALLED, SKIPPING..."
+  ui_print " "
+
+else
+  # Install Mindetach
+  ui_print "MINDETACH NOT FOUND, INSTALLATION STARTS..."
+  ui_print " "
+
+  sh $MARS_PATH/revanced/mindetach/META-INF/com/google/android/update-binary dummy 1 $MARS_PATH/revanced/mindetach/mindetach.zip
 fi
 
 set_progress 0.9
