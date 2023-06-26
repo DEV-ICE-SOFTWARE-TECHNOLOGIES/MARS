@@ -273,7 +273,7 @@ _optimize() {
   su -c cmd package bg-dexopt-job
 
   for apk in "$MARS_PATH/system_root/" 'system_ext/priv-app/*/*.apk' 'system/app/*/*.apk' 'system/priv-app/*/*.apk' 'system/product/priv-app/*/*.apk' 'system/product/app/*/*.apk'; do
-    $zipalign -c -v 4 "$apk" 1>&2
+    $ZIPALIGN -c -v 4 "$apk" 1>&2
   done
 
   ui_print "TRIMMING FILESYSTEMS..."
