@@ -4,18 +4,18 @@ set -x
 
 umask 022
 
-MARS_VER='23.06'
-MARS_VER_CODE=230626
-MARS_PATH=/tmp/mars
+MARS_VER='23.07'
+MARS_VER_CODE=230709
+MARS_PATH=/sdcard/mars
 MARS_LOG=/sdcard/MARS.log
 MARS_PROP=$MARS_PATH/prop/mars.prop
+PRODUCT_PROP=/product/etc/build.prop
+SYSTEM_EXT_PROP=/system_ext/etc/build.prop
 SYSTEM_PROP=/system_root/system/build.prop
-PRODUCT_PROP=/system_root/product/etc/build.prop
-SYSTEM_EXT_PROP=/system_root/system_ext/etc/build.prop
-VENDOR_PROP=/system_root/vendor/build.prop
-BUSYBOX="/system_root/system/xbin/busybox"
-SQLITE="/system_root/system/xbin/sqlite3"
-ZIPALIGN="/system_root/system/xbin/zipalign"
+VENDOR_PROP=/vendor/build.prop
+BUSYBOXFILE=/system_root/system/xbin/busybox
+SQLITE3FILE=/system_root/system/xbin/sqlite3
+ZIPALIGNFILE=/system_root/system/xbin/zipalign
 OUTFD=$2
 ZIPFILE=$3
 
@@ -32,6 +32,14 @@ _setup() {
 
   show_progress 0.1 10
 
+  rm -rf "/data/cache"
+
+  rm -rf "/data/dalvik-cache"
+
+  rm -rf "$MARS_PATH"
+
+  sleep 1
+
   mkdir -p $MARS_PATH
 
   unzip -o $ZIPFILE -d $MARS_PATH >&2
@@ -40,32 +48,41 @@ _setup() {
 
   mv -f $MARS_PATH/META-INF/com/google/android/mars/* $MARS_PATH 2>/dev/null
 
+  sleep 1
+
   rm -rf $MARS_PATH/META-INF
 
   chmod -R 755 /tmp/mars
 
+  sort -u -o $MARS_PROP $MARS_PROP
+
   ui_print " "
   ui_print "----- STARTING MARS-$MARS_VER"
   ui_print " "
+
   sleep 1
+
 }
 
 _sync() {
   sync
   sleep 1
+
 }
 
 _mount() {
   ui_print "REMOUNTING PARTITIONS..."
   ui_print " "
 
-  mount -o rw /cache
-  mount -o rw /data
-  mount -o rw /product
-  mount -o rw /system_ext
-  mount -o rw /system_root
-  mount -o rw /vendor
+  mount -o remount,rw -t auto /data
+  mount -o remount,rw -t auto /product
+  mount -o remount,rw -t auto /system
+  mount -o remount,rw -t auto /system_ext
+  mount -o remount,rw -t auto /vendor
+  mount -t rootfs -o remount,rw rootfs
+
   sleep 1
+
 }
 
 _debloat() {
@@ -93,14 +110,16 @@ _debloat() {
   rm -rf "/product/priv-app/MiuiGallery"
   rm -rf "/product/priv-app/MiuiScanner"
   rm -rf "/product/priv-app/Weather"
+
   sleep 1
+
 }
 
 _tools() {
   ui_print "DEPLOYING TOOLS..."
   ui_print " "
 
-  if [ ! -f "$BUSYBOX" ]; then
+  if [ ! -f "$BUSYBOXFILE" ]; then
     ui_print "BUSYBOX NOT FOUND, INSTALLATION STARTS..."
     ui_print " "
 
@@ -108,7 +127,7 @@ _tools() {
 
     sleep 1
 
-    if [ ! -f "$BUSYBOX" ]; then
+    if [ ! -f "$BUSYBOXFILE" ]; then
       ui_print "BUSYBOX INSTALLATION FAILED, ABORTING..."
       ui_print " "
     else
@@ -121,7 +140,7 @@ _tools() {
     ui_print " "
   fi
 
-  if [ ! -f "$ZIPALIGN" ]; then
+  if [ ! -f "$ZIPALIGNFILE" ]; then
     ui_print "ZIPALIGN NOT FOUND, INSTALLATION STARTS..."
     ui_print " "
 
@@ -129,7 +148,7 @@ _tools() {
 
     sleep 1
 
-    if [ ! -f "$ZIPALIGN" ]; then
+    if [ ! -f "$ZIPALIGNFILE" ]; then
       ui_print "ZIPALIGN INSTALLATION FAILED, ABORTING..."
       ui_print " "
     else
@@ -142,7 +161,7 @@ _tools() {
     ui_print " "
   fi
 
-  if [ ! -f "$SQLITE3" ]; then
+  if [ ! -f "$SQLITE3FILE" ]; then
     ui_print "SQLITE3 NOT FOUND, INSTALLATION STARTS..."
     ui_print " "
 
@@ -150,7 +169,7 @@ _tools() {
 
     sleep 1
 
-    if [ ! -f "$SQLITE3" ]; then
+    if [ ! -f "$SQLITE3FILE" ]; then
       ui_print "SQLITE3 INSTALLATION FAILED, ABORTING..."
       ui_print " "
     else
@@ -162,21 +181,103 @@ _tools() {
     ui_print "SQLITE3 ALREADY INSTALLED, SKIPPING..."
     ui_print " "
   fi
+
   sleep 1
+
 }
 
 _extract() {
   ui_print "EXTRACTING SYSTEM CONTENTS..."
   ui_print " "
 
-  mv $MARS_PATH/system/product/* /product
-  mv $MARS_PATH/system/system_ext/* /system_ext
-  mv $MARS_PATH/system/system/* /system_root/system
-  mv $MARS_PATH/system/vendor/* /vendor
+  mv $MARS_PATH/product/* /product
+  mv $MARS_PATH/system_ext/* /system_ext
+  mv $MARS_PATH/system/* /system_root/system
+  mv $MARS_PATH/vendor/* /vendor
+
   sleep 1
+
 }
 
-_patch() {
+_product_patch() {
+  ui_print "RUNNING PATCH PROP SCRIPT..."
+  ui_print " "
+
+  ex() {
+    chmod 0644 "$PRODUCT_PROP"
+    ui_print "ERROR: $@, script aborted!"
+    exit 1
+  }
+
+  ui_print "SEARCHING FOR MARS PROP..."
+
+  test -s "$MARS_PROP" && ui_print "..$MARS_PROP FOUND" || ex " $MARS_PROP NOT FOUND OR EMPTY"
+
+  ANSWER=$(sed "s/BACKUP=//p;d" "$MARS_PROP")
+
+  backup() {
+    echo "# BACKUP OF $PRODUCT_PROP CREATED AT $(date) MARS PATCH $ver" >"$1" || ex "CANNOT WRITE BACKUP FILE $1" &&
+      (cat "$PRODUCT_PROP" >>"$1" && ui_print "..$PRODUCT_PROP BACKED UP AT $1.")
+  }
+
+  case "$ANSWER" in
+  y | Y | yes | Yes | YES)
+    backup "${MARS_PROP%/*}/${PRODUCT_PROP##*/}.backup"
+    ;;
+
+  n | N | no | No | NO) ;;
+
+  *)
+    [[ -z "$ANSWER" || ! -d $(dirname "$ANSWER") ]] && ex "PATH EMPTY OR NOT EXISTING" || backup "$ANSWER"
+    ;;
+  esac
+
+  ui_print "SCANNING $MARS_PROP..."
+  ui_print ""
+
+  sed -r '/(^#|^ *$|^BACKUP=)/d;/(.*=.*|^\!|^\@.*\|.*|^\$.*\|.*)/!d' "$MARS_PROP" | while read line; do
+    if echo "$line" | grep -q '^\!'; then
+      entry=$(echo "${line#?}" | sed -e 's/[\/&]/\\&/g')
+      grep -q "$entry" "$PRODUCT_PROP" && (sed "/$entry/d" -i "$PRODUCT_PROP" && ui_print "PROPS CONTAINING \"$entry\" REMOVED")
+
+    elif echo "$line" | grep -q '^\@'; then
+      entry=$(echo "${line#?}" | sed -e 's/[\/&]/\\&/g')
+      var=$(echo "$entry" | cut -d\| -f1)
+      app=$(echo "$entry" | cut -d\| -f2)
+      grep -q "$var" "$PRODUCT_PROP" && (sed "s/^$var=.*$/&$app/" -i "$PRODUCT_PROP" && ui_print "\"$app\" APPENDED TO VALUE OF \"$var\"")
+
+    elif echo "$line" | grep -q '^\$'; then
+      entry=$(echo "${line#?}" | sed -e 's/[\/&]/\\&/g')
+      var=$(echo "$entry" | cut -d\| -f1)
+      new=$(echo "$entry" | cut -d\| -f2)
+      grep -q "$var=" "$PRODUCT_PROP" && (sed "s/^$var=.*$/$var=$new/" -i "$PRODUCT_PROP" && ui_print "VALUE OF \"$var\" CHANGED TO \"$new\"")
+
+    else
+      var=$(echo "$line" | cut -d= -f1)
+      if grep -q "$var" "$PRODUCT_PROP"; then
+        grep -q $(grep "$var" "$MARS_PROP") "$PRODUCT_PROP" || (sed "s/^$var=.*$/$line/" -i "$PRODUCT_PROP" && ui_print "VALUE OF \"$var\" OVERWRITTEN")
+      else
+        echo "$line" >>"$PRODUCT_PROP" && ui_print "PROP \"$line\" ADDED"
+      fi
+    fi
+  done
+
+  sed '/^ *$/d' -i "$PRODUCT_PROP"
+
+  sort -u -o "$PRODUCT_PROP" "$PRODUCT_PROP"
+
+  ui_print "PROPS SUCCESSFULLY PATCHED"
+  ui_print " "
+
+  echo "#" >>"$PRODUCT_PROP"
+
+  chmod 0644 "$PRODUCT_PROP" && ui_print "ORIGINAL PERMISSIONS FOR $PRODUCT_PROP RESTORED"
+
+  sleep 1
+
+}
+
+_system_patch() {
   ui_print "RUNNING PATCH PROP SCRIPT..."
   ui_print " "
 
@@ -241,6 +342,8 @@ _patch() {
 
   sed '/^ *$/d' -i "$SYSTEM_PROP"
 
+  sort -u -o "$SYSTEM_PROP" "$SYSTEM_PROP"
+
   ui_print "PROPS SUCCESSFULLY PATCHED"
   ui_print " "
 
@@ -249,6 +352,163 @@ _patch() {
   chmod 0644 "$SYSTEM_PROP" && ui_print "ORIGINAL PERMISSIONS FOR $SYSTEM_PROP RESTORED"
 
   sleep 1
+
+}
+
+_system_ext_patch() {
+  ui_print "RUNNING PATCH PROP SCRIPT..."
+  ui_print " "
+
+  ex() {
+    chmod 0644 "$SYSTEM_EXT_PROP"
+    ui_print "ERROR: $@, script aborted!"
+    exit 1
+  }
+
+  ui_print "SEARCHING FOR MARS PROP..."
+
+  test -s "$MARS_PROP" && ui_print "..$MARS_PROP FOUND" || ex " $MARS_PROP NOT FOUND OR EMPTY"
+
+  ANSWER=$(sed "s/BACKUP=//p;d" "$MARS_PROP")
+
+  backup() {
+    echo "# BACKUP OF $SYSTEM_EXT_PROP CREATED AT $(date) MARS PATCH $ver" >"$1" || ex "CANNOT WRITE BACKUP FILE $1" &&
+      (cat "$SYSTEM_EXT_PROP" >>"$1" && ui_print "..$SYSTEM_EXT_PROP BACKED UP AT $1.")
+  }
+
+  case "$ANSWER" in
+  y | Y | yes | Yes | YES)
+    backup "${MARS_PROP%/*}/${SYSTEM_EXT_PROP##*/}.backup"
+    ;;
+
+  n | N | no | No | NO) ;;
+
+  *)
+    [[ -z "$ANSWER" || ! -d $(dirname "$ANSWER") ]] && ex "PATH EMPTY OR NOT EXISTING" || backup "$ANSWER"
+    ;;
+  esac
+
+  ui_print "SCANNING $MARS_PROP..."
+  ui_print ""
+
+  sed -r '/(^#|^ *$|^BACKUP=)/d;/(.*=.*|^\!|^\@.*\|.*|^\$.*\|.*)/!d' "$MARS_PROP" | while read line; do
+    if echo "$line" | grep -q '^\!'; then
+      entry=$(echo "${line#?}" | sed -e 's/[\/&]/\\&/g')
+      grep -q "$entry" "$SYSTEM_EXT_PROP" && (sed "/$entry/d" -i "$SYSTEM_EXT_PROP" && ui_print "PROPS CONTAINING \"$entry\" REMOVED")
+
+    elif echo "$line" | grep -q '^\@'; then
+      entry=$(echo "${line#?}" | sed -e 's/[\/&]/\\&/g')
+      var=$(echo "$entry" | cut -d\| -f1)
+      app=$(echo "$entry" | cut -d\| -f2)
+      grep -q "$var" "$SYSTEM_EXT_PROP" && (sed "s/^$var=.*$/&$app/" -i "$SYSTEM_EXT_PROP" && ui_print "\"$app\" APPENDED TO VALUE OF \"$var\"")
+
+    elif echo "$line" | grep -q '^\$'; then
+      entry=$(echo "${line#?}" | sed -e 's/[\/&]/\\&/g')
+      var=$(echo "$entry" | cut -d\| -f1)
+      new=$(echo "$entry" | cut -d\| -f2)
+      grep -q "$var=" "$SYSTEM_EXT_PROP" && (sed "s/^$var=.*$/$var=$new/" -i "$SYSTEM_EXT_PROP" && ui_print "VALUE OF \"$var\" CHANGED TO \"$new\"")
+
+    else
+      var=$(echo "$line" | cut -d= -f1)
+      if grep -q "$var" "$SYSTEM_EXT_PROP"; then
+        grep -q $(grep "$var" "$MARS_PROP") "$SYSTEM_EXT_PROP" || (sed "s/^$var=.*$/$line/" -i "$SYSTEM_EXT_PROP" && ui_print "VALUE OF \"$var\" OVERWRITTEN")
+      else
+        echo "$line" >>"$SYSTEM_EXT_PROP" && ui_print "PROP \"$line\" ADDED"
+      fi
+    fi
+  done
+
+  sed '/^ *$/d' -i "$SYSTEM_EXT_PROP"
+
+  sort -u -o "$SYSTEM_EXT_PROP" "$SYSTEM_EXT_PROP"
+
+  ui_print "PROPS SUCCESSFULLY PATCHED"
+  ui_print " "
+
+  echo "#" >>"$SYSTEM_EXT_PROP"
+
+  chmod 0644 "$SYSTEM_EXT_PROP" && ui_print "ORIGINAL PERMISSIONS FOR $SYSTEM_EXT_PROP RESTORED"
+
+  sleep 1
+
+}
+
+_vendor_patch() {
+  ui_print "RUNNING PATCH PROP SCRIPT..."
+  ui_print " "
+
+  ex() {
+    chmod 0644 "$VENDOR_PROP"
+    ui_print "ERROR: $@, script aborted!"
+    exit 1
+  }
+
+  ui_print "SEARCHING FOR MARS PROP..."
+
+  test -s "$MARS_PROP" && ui_print "..$MARS_PROP FOUND" || ex " $MARS_PROP NOT FOUND OR EMPTY"
+
+  ANSWER=$(sed "s/BACKUP=//p;d" "$MARS_PROP")
+
+  backup() {
+    echo "# BACKUP OF $VENDOR_PROP CREATED AT $(date) MARS PATCH $ver" >"$1" || ex "CANNOT WRITE BACKUP FILE $1" &&
+      (cat "$VENDOR_PROP" >>"$1" && ui_print "..$VENDOR_PROP BACKED UP AT $1.")
+  }
+
+  case "$ANSWER" in
+  y | Y | yes | Yes | YES)
+    backup "${MARS_PROP%/*}/${VENDOR_PROP##*/}.backup"
+    ;;
+
+  n | N | no | No | NO) ;;
+
+  *)
+    [[ -z "$ANSWER" || ! -d $(dirname "$ANSWER") ]] && ex "PATH EMPTY OR NOT EXISTING" || backup "$ANSWER"
+    ;;
+  esac
+
+  ui_print "SCANNING $MARS_PROP..."
+  ui_print ""
+
+  sed -r '/(^#|^ *$|^BACKUP=)/d;/(.*=.*|^\!|^\@.*\|.*|^\$.*\|.*)/!d' "$MARS_PROP" | while read line; do
+    if echo "$line" | grep -q '^\!'; then
+      entry=$(echo "${line#?}" | sed -e 's/[\/&]/\\&/g')
+      grep -q "$entry" "$VENDOR_PROP" && (sed "/$entry/d" -i "$VENDOR_PROP" && ui_print "PROPS CONTAINING \"$entry\" REMOVED")
+
+    elif echo "$line" | grep -q '^\@'; then
+      entry=$(echo "${line#?}" | sed -e 's/[\/&]/\\&/g')
+      var=$(echo "$entry" | cut -d\| -f1)
+      app=$(echo "$entry" | cut -d\| -f2)
+      grep -q "$var" "$VENDOR_PROP" && (sed "s/^$var=.*$/&$app/" -i "$VENDOR_PROP" && ui_print "\"$app\" APPENDED TO VALUE OF \"$var\"")
+
+    elif echo "$line" | grep -q '^\$'; then
+      entry=$(echo "${line#?}" | sed -e 's/[\/&]/\\&/g')
+      var=$(echo "$entry" | cut -d\| -f1)
+      new=$(echo "$entry" | cut -d\| -f2)
+      grep -q "$var=" "$VENDOR_PROP" && (sed "s/^$var=.*$/$var=$new/" -i "$VENDOR_PROP" && ui_print "VALUE OF \"$var\" CHANGED TO \"$new\"")
+
+    else
+      var=$(echo "$line" | cut -d= -f1)
+      if grep -q "$var" "$VENDOR_PROP"; then
+        grep -q $(grep "$var" "$MARS_PROP") "$VENDOR_PROP" || (sed "s/^$var=.*$/$line/" -i "$VENDOR_PROP" && ui_print "VALUE OF \"$var\" OVERWRITTEN")
+      else
+        echo "$line" >>"$VENDOR_PROP" && ui_print "PROP \"$line\" ADDED"
+      fi
+    fi
+  done
+
+  sed '/^ *$/d' -i "$VENDOR_PROP"
+
+  sort -u -o "$VENDOR_PROP" "$VENDOR_PROP"
+
+  ui_print "PROPS SUCCESSFULLY PATCHED"
+  ui_print " "
+
+  echo "#" >>"$VENDOR_PROP"
+
+  chmod 0644 "$VENDOR_PROP" && ui_print "ORIGINAL PERMISSIONS FOR $VENDOR_PROP RESTORED"
+
+  sleep 1
+
 }
 
 _magisk() {
@@ -263,18 +523,157 @@ _magisk() {
 
     sh $MARS_PATH/magisk/META-INF/com/google/android/update-binary dummy 1 $MARS_PATH/magisk/magisk.zip
   fi
+
   sleep 1
+
 }
 
 _optimize() {
-  ui_print "OPTIMIZING APPS..."
+  ui_print "OPTIMIZING ANDROID..."
   ui_print " "
 
-  su -c cmd package bg-dexopt-job
+  # Network Latency
+  echo "2" >/proc/sys/net/ipv4/tcp_ecn
+  echo "1" >/proc/sys/net/ipv4/tcp_sack
+  echo "1" >/proc/sys/net/ipv4/tcp_dsack
+  echo "1" >/proc/sys/net/ipv4/tcp_low_latency
+  echo "1" >/proc/sys/net/ipv4/tcp_timestamps
+  echo "2" >/proc/sys/net/ipv6/tcp_ecn
+  echo "1" >/proc/sys/net/ipv6/tcp_sack
+  echo "1" >/proc/sys/net/ipv6/tcp_dsack
+  echo "1" >/proc/sys/net/ipv6/tcp_low_latency
+  echo "1" >/proc/sys/net/ipv6/tcp_timestamps
 
-  for apk in "$MARS_PATH/system_root/" 'system_ext/priv-app/*/*.apk' 'system/app/*/*.apk' 'system/priv-app/*/*.apk' 'system/product/priv-app/*/*.apk' 'system/product/app/*/*.apk'; do
-    $ZIPALIGN -c -v 4 "$apk" 1>&2
+  # Optimize upload / download Speeds
+  for i in /sys/class/net/*; do
+    echo "100" >$i/tx_queue_len
   done
+
+  # Gentle Fair Sleeper
+  echo "NO_GENTLE_FAIR_SLEEPERS" >/sys/kernel/debug/sched_features
+  echo "NO_NEW_FAIR_SLEEPERS" >/sys/kernel/debug/sched_features
+  echo "NO_NORMALIZED_SLEEPER" >/sys/kernel/debug/sched_features
+
+  # Normalized Sleeper
+  if [ -e /sys/kernel/debug/sched_features ]; then
+    echo "NO_NORMALIZED_SLEEPER" >/sys/kernel/debug/sched_features
+  fi
+
+  # Kernel
+  if [ -e /proc/sys/kernel/softlockup_panic ]; then
+    echo "0" >/proc/sys/kernel/softlockup_panic
+  fi
+  if [ -e /proc/sys/kernel/hung_task_timeout_secs ]; then
+    echo "0" >/proc/sys/kernel/hung_task_timeout_secs
+  fi
+  if [ -e /proc/sys/kernel/panic_on_oops ]; then
+    echo "0" >/proc/sys/kernel/panic_on_oops
+  fi
+  if [ -e /proc/sys/kernel/panic ]; then
+    echo "0" >/proc/sys/kernel/panic
+  fi
+
+  # entropy tweaks
+  echo "1024" >/proc/sys/kernel/random/read_wakeup_threshold
+  echo "1024" >/proc/sys/kernel/random/write_wakeup_threshold
+
+  # SQLITE3
+  for i in $(busybox find /d* -iname "*.db"); do
+    $SQLITE3FILE $i 'PRAGMA integrity_check;'
+    resCheck=$?
+    if [ $resCheck == 0 ]; then
+      resCheck="SUCCESS"
+    else
+      resCheck="ERRCODE-$resCheck"
+    fi
+
+    $SQLITE3FILE $i 'VACUUM;'
+    resVac=$?
+    if [ $resVac == 0 ]; then
+      resVac="SUCCESS"
+    else
+      resVac="ERRCODE-$resVac"
+    fi
+
+    $SQLITE3FILE $i 'REINDEX;'
+    resIndex=$?
+    if [ $resIndex == 0 ]; then
+      resIndex="SUCCESS"
+    else
+      resIndex="ERRCODE-$resIndex"
+    fi
+    echo "Database $i:  CHECK=$resCheck  VACUUM=$resVac  REINDEX=$resIndex" | tee -a $MARS_LOG
+  done
+
+  # BATTERY CALIBRATION
+  if [ -e /data/.battery-calibrated ]; then
+    log -p i -t battery-calibration "*** /data/.battery-calibrated exists, skipping calibration ***"
+    exit 0
+  fi
+
+  (
+    while :; do
+      LEVEL=$(cat /sys/class/power_supply/battery/capacity)
+      CUR=$(cat /sys/class/power_supply/battery/batt_current)
+      if [ "$LEVEL" == "100" ] && [ "$CUR" == "0" ]; then
+        log -p i -t battery-calibration "*** LEVEL: $LEVEL CUR: $CUR***: calibrating..."
+        rm -f /data/system/batterystats.bin
+        touch /data/.battery-calibrated
+        exit 0
+      fi
+      if [ "$LEVEL" == "100" ]; then
+        log -p i -t battery-calibration "*** LEVEL: $LEVEL CUR: $CUR ***: sleeping for $SLEEP s..."
+        sleep $SLEEP
+      else
+        log -p i -t battery-calibration "*** LEVEL: $LEVEL CUR: $CUR ***: battery level is not 100, skipping calibration ***"
+        exit 0
+      fi
+    done
+  ) &
+
+  # GMS
+  su -c "pm enable com.google.android.gms/.update.SystemUpdateActivity"
+  su -c "pm enable com.google.android.gms/.update.SystemUpdateService"
+  su -c "pm enable com.google.android.gms/.update.SystemUpdateService$ActiveReceiver"
+  su -c "pm enable com.google.android.gms/.update.SystemUpdateService$Receiver"
+  su -c "pm enable com.google.android.gms/.update.SystemUpdateService$SecretCodeReceiver"
+  su -c "pm enable com.google.android.gsf/.update.SystemUpdateActivity"
+  su -c "pm enable com.google.android.gsf/.update.SystemUpdatePanoActivity"
+  su -c "pm enable com.google.android.gsf/.update.SystemUpdateService"
+  su -c "pm enable com.google.android.gsf/.update.SystemUpdateService$Receiver"
+  su -c "pm enable com.google.android.gsf/.update.SystemUpdateService$SecretCodeReceiver"
+
+  sleep 5
+
+  for apk in /product/priv-app/*/*.apk; do
+    $ZIPALIGNFILE -c -v 4 "$apk" 1>&2
+  done
+
+  for apk in /product/app/*/*.apk; do
+    $ZIPALIGNFILE -c -v 4 "$apk" 1>&2
+  done
+
+  for apk in /system/priv-app/*/*.apk; do
+    $ZIPALIGNFILE -c -v 4 "$apk" 1>&2
+  done
+
+  for apk in /system/app/*/*.apk; do
+    $ZIPALIGNFILE -c -v 4 "$apk" 1>&2
+  done
+
+  for apk in /system_ext/priv-app/*/*.apk; do
+    $ZIPALIGNFILE -c -v 4 "$apk" 1>&2
+  done
+
+  for apk in /system_ext/app/*/*.apk; do
+    $ZIPALIGNFILE -c -v 4 "$apk" 1>&2
+  done
+
+  for apk in /vendor/app/*/*.apk; do
+    $ZIPALIGNFILE -c -v 4 "$apk" 1>&2
+  done
+
+  sleep 5
 
   ui_print "TRIMMING FILESYSTEMS..."
   ui_print " "
@@ -285,19 +684,15 @@ _optimize() {
   /system/bin/busybox fstrim -v /system_ext
   /system/bin/busybox fstrim -v /system_root
   /system/bin/busybox fstrim -v /vendor
+
   sleep 1
+
 }
 
 _unmount() {
   ui_print "UNMOUNTING PARTITIONS..."
   ui_print " "
 
-  if [ -n "$(mount | grep /cache)" ]; then
-    umount /cache
-  fi
-  if [ -n "$(mount | grep /data)" ]; then
-    umount /data
-  fi
   if [ -n "$(mount | grep /product)" ]; then
     umount /product
   fi
@@ -310,41 +705,34 @@ _unmount() {
   if [ -n "$(mount | grep /vendor)" ]; then
     umount /vendor
   fi
+
   sleep 1
-}
 
-_cleanup() {
-  ui_print "...CLEANING AND WIPE"
-  ui_print " "
-
-  rm -rf "/cache"
-  rm -rf "/data/cache"
-  rm -rf "/data/dalvik-cache"
-  rm -rf "/data/data"
-  rm -rf "$MARS_PATH"
 }
 
 _setup
 _sync
-_mount
 set_progress 0.1
-_debloat
-set_progress 0.2
-_tools
-set_progress 0.3
-_extract
-set_progress 0.4
-_patch
-set_progress 0.5
-_magisk
-set_progress 0.6
 _mount
+set_progress 0.2
+_debloat
+set_progress 0.3
+_tools
+set_progress 0.4
+_extract
+set_progress 0.5
+_product_patch
+_system_patch
+_system_ext_patch
+_vendor_patch
+set_progress 0.6
+_magisk
 set_progress 0.7
-_optimize
+_mount
 set_progress 0.8
-_unmount
+_optimize
 set_progress 0.9
-_cleanup
+_unmount
 set_progress 1.0
 
 ui_print "----- MARS-$MARS_VER INSTALLATION COMPLETED"
