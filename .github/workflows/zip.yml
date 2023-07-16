@@ -40,9 +40,6 @@ jobs:
           prerelease: false
           body: Automated release
           target_commitish: ${{ github.sha }}
-          repository_dispatch_event_type: release
-          branch: main
-          distribution: public
 
       - name: Upload Zip file
         id: upload-release-asset
