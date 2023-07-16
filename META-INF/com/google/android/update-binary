@@ -1,21 +1,32 @@
 #!/sbin/sh
 
+# To-Do:
+# - Make Prop Folders to Configs Folders
+# - Make Configs Folders contain Sub Folders for Props and Android
+
 set -x
 
 umask 022
 
+DEVICE=$(getprop ro.product.device)
+
+BOOTSLOT=$(getprop ro.boot.slot_suffix)
+
 MARS_VER='23.07'
-MARS_VER_CODE=230709
+MARS_VER_CODE=230716
 MARS_PATH=/sdcard/mars
 MARS_LOG=/sdcard/MARS.log
-MARS_PROP=$MARS_PATH/prop/mars.prop
+MARS_PROP=$MARS_PATH/props/$DEVICE/mars.prop
+
 PRODUCT_PROP=/product/etc/build.prop
 SYSTEM_EXT_PROP=/system_ext/etc/build.prop
 SYSTEM_PROP=/system_root/system/build.prop
 VENDOR_PROP=/vendor/build.prop
+
 BUSYBOXFILE=/system_root/system/xbin/busybox
 SQLITE3FILE=/system_root/system/xbin/sqlite3
 ZIPALIGNFILE=/system_root/system/xbin/zipalign
+
 OUTFD=$2
 ZIPFILE=$3
 
