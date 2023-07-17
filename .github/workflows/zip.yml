@@ -1,33 +1,29 @@
-name: Create Flashable Zip on Push
+name: MARS ZIPPACK
 
 on:
   push:
     branches:
-      - main
+    - main
 
 jobs:
   build:
-    name: Build and Package
+    name: Upload Asset
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
+          
+      - name: Checkout Repo
         uses: actions/checkout@v2
 
-      - name: Set up JDK
-        uses: actions/setup-java@v2
-        with:
-          java-version: '11'
-          distribution: 'adopt'
+      - name: Get Id
+        id: idMARS_VER_CODE
+        run: echo "::set-output name=id::$(grep "^id=" META-INF/com/google/android/update-binary|cut -d'=' -f2)"
+        
+      - name: Get Version
+        id: idMARS_VER
+        run: echo "::set-output name=version::$(grep "^version=" META-INF/com/google/android/update-binary|cut -d'=' -f2)"
 
-      - name: Get current date and time
-        id: datetime
-        run: |
-          echo "::set-output name=date::$(date +%Y-%m-%d)"
-          echo "::set-output name=time::$(date +%H-%M-%S)"
-
-      - name: Zip repository
-        run: zip -r "MARS-${{ steps.datetime.outputs.date }}_${{ steps.datetime.outputs.time }}.zip" .
+      - name: Build MARS
+        run: zip -r "MARS_${{ steps.idMARS_VER.outputs.id }}.v${{ steps.idMARS_VER_CODE.outputs.version }}.zip" . -x "README.md" ".git/*" ".github/*" 
 
       - name: Create Release
         id: create_release
@@ -35,20 +31,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.sha }}
-          release_name: Release ${{ github.sha }}
           draft: false
           prerelease: false
-          body: Automated release
-          target_commitish: ${{ github.sha }}
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ steps.idMARS_VER.outputs.version }}
 
-      - name: Upload Zip file
-        id: upload-release-asset
+      - name: Upload Release Asset
+        id: upload-release-asset 
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: "./MARS-${{ steps.datetime.outputs.date }}_${{ steps.datetime.outputs.time }}.zip"
-          asset_name: "MARS-${{ steps.datetime.outputs.date }}_${{ steps.datetime.outputs.time }}.zip"
+          upload_url: ${{ steps.create_release.outputs.upload_url }} 
+          asset_path: ./${{ steps.idMARS_VER_CODE.outputs.id }}.v${{ steps.idMARS_VER.outputs.version }}.zip
+          asset_name: ${{ steps.idMARS_VER_CODE.outputs.id }}.v${{ steps.idMARS_VER.outputs.version }}.zip
           asset_content_type: application/zip
