@@ -13,7 +13,7 @@ DEVICE=$(getprop ro.product.device)
 BOOTSLOT=$(getprop ro.boot.slot_suffix)
 
 MARS_VER='23.07'
-MARS_VER_CODE=230717
+MARS_VER_CODE=230718
 MARS_PATH=/sdcard/mars
 MARS_LOG=/sdcard/MARS.log
 MARS_PROP=$MARS_PATH/props/$DEVICE/mars.prop
