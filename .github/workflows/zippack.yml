@@ -32,8 +32,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           draft: false
-          prerelease: false
-          tag_name: ${{ steps.idMARS_VER_CODE.outputs.id }}
+          prerelease: true
+          # Create tag name from version
+          tag_name: MARS SNAPSHOT V${{ steps.idMARS_VER.outputs.version }}
           release_name: MARS SNAPSHOT V${{ steps.idMARS_VER.outputs.version }}
 
       - name: Upload Release Asset
