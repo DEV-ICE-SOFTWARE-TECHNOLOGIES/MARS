@@ -33,7 +33,7 @@ jobs:
         with:
           draft: false
           prerelease: false
-          tag_name: V${{ idMARS_VER.outputs.version }}
+          tag_name: ${{ steps.idMARS_VER_CODE.outputs.id }}
           release_name: MARS SNAPSHOT V${{ steps.idMARS_VER.outputs.version }}
 
       - name: Upload Release Asset

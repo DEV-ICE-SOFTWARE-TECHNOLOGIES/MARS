@@ -13,7 +13,7 @@ DEVICE=$(getprop ro.product.device)
 BOOTSLOT=$(getprop ro.boot.slot_suffix)
 
 MARS_VER='23.07'
-MARS_VER_CODE=230718
+MARS_VER_CODE=230722
 MARS_PATH=/sdcard/mars
 MARS_LOG=/sdcard/MARS.log
 MARS_PROP=$MARS_PATH/props/$DEVICE/mars.prop
@@ -66,6 +66,8 @@ _setup() {
   chmod -R 755 /tmp/mars
 
   sort -u -o $MARS_PROP $MARS_PROP
+
+  echo "#MARS_VER=$MARS_VER" >>$MARS_PROP
 
   ui_print " "
   ui_print "----- STARTING MARS-$MARS_VER"
@@ -636,7 +638,7 @@ _optimize() {
         log -p i -t battery-calibration "*** LEVEL: $LEVEL CUR: $CUR ***: sleeping for $SLEEP s..."
         sleep $SLEEP
       else
-        log -p i -t battery-calibration "*** LEVEL: $LEVEL CUR: $CUR ***: battery level is not 100, skipping calibration ***"
+        log -p i -t battery-calibration "*** LEVEL: $LEVEL CUR: $CUR ***: BATTERY LEVEL IS NOT 100, SKIPPING CALIBRATION ***"
         exit 0
       fi
     done
