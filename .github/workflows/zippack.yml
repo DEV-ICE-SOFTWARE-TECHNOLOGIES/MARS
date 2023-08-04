@@ -16,14 +16,14 @@ jobs:
 
       - name: SET TIME
         id: SET_TIME
-        run: echo "{ZIP_TIME}={$(date +%H%M%S)}"  >> $GITHUB_OUTPUT
+        run: echo "::set-output name=ZIP_TIME::$(date +%H%M%S)}"
         
       - name: SET VERSION
         id: SET_VERSION
-        run: echo "{MARS_VER_CODE}={$(grep "^MARS_VER_CODE=" META-INF/com/google/android/update-binary|cut -d'=' -f2)}" >> $GITHUB_OUTPUT
+        run: echo "::set-output name=MARS_VER_CODE::$(grep "^MARS_VER_CODE=" META-INF/com/google/android/update-binary|cut -d'=' -f2)"
 
       - name: BUILD ZIP
-        run: zip -r "MARS_V${{ steps.SET_VERSION.outputs.MARS_VER_CODE }}_${{ steps.SET_TIME.outputs.ZIP_TIME }} .zip" . -x ".gitattributes" ".gitignore" ".git/*" ".github/*" "MARS4RO2RW/*"
+        run: zip -r "MARS_V${{ steps.SET_VERSION.outputs.MARS_VER_CODE }}_${{ steps.SET_TIME.outputs.ZIP_TIME }}.zip" . -x ".gitattributes" ".gitignore" ".git/*" ".github/*" "MARS4RO2RW/*"
 
       - name: CREATE RELEASE
         id: CREATE_RELEASE
@@ -43,6 +43,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.CREATE_RELEASE.outputs.upload_url }} 
-          asset_path: ./MARS_V${{ steps.SET_VERSION.outputs.MARS_VER_CODE }}.zip
-          asset_name: MARS_V${{ steps.SET_VERSION.outputs.MARS_VER_CODE }}.zip
+          asset_path: ./MARS_V${{ steps.SET_VERSION.outputs.MARS_VER_CODE }}_${{ steps.SET_TIME.outputs.ZIP_TIME }}.zip
+          asset_name: MARS_V${{ steps.SET_VERSION.outputs.MARS_VER_CODE }}_${{ steps.SET_TIME.outputs.ZIP_TIME }}.zip
           asset_content_type: application/zip
