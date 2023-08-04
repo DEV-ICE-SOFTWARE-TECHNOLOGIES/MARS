@@ -33,8 +33,8 @@ jobs:
         with:
           draft: false
           prerelease: true
-          tag_name: MARS_V${{ steps.SET_VERSION.outputs.MARS_VER_CODE }}
-          release_name: MARS_V${{ steps.SET_VERSION.outputs.MARS_VER_CODE }}
+          tag_name: MARS_V${{ steps.SET_VERSION.outputs.MARS_VER_CODE }}_${{ steps.SET_TIME.outputs.ZIP_TIME }}
+          release_name: MARS_V${{ steps.SET_VERSION.outputs.MARS_VER_CODE }}_${{ steps.SET_TIME.outputs.ZIP_TIME }}
 
       - name: UPLOAD RELEASE
         id: UPLOAD_RELEASE
