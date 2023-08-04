@@ -12,14 +12,18 @@ jobs:
     steps:
           
       - name: CHECKOUT REPO
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+
+      - name: SET TIME
+        id: SET_TIME
+        run: echo "{ZIP_TIME}={$(date +%H%M%S)}"  >> $GITHUB_OUTPUT
         
       - name: SET VERSION
-        id: MARS_VERSION
-        run: echo "::set-output name=MARS_VER_CODE::$(grep "^MARS_VER_CODE=" META-INF/com/google/android/update-binary|cut -d'=' -f2)"
+        id: SET_VERSION
+        run: echo "{MARS_VER_CODE}={$(grep "^MARS_VER_CODE=" META-INF/com/google/android/update-binary|cut -d'=' -f2)}" >> $GITHUB_OUTPUT
 
       - name: BUILD ZIP
-        run: zip -r "MARS_V${{ steps.MARS_VERSION.outputs.MARS_VER_CODE }}.zip" . -x ".gitattributes" ".gitignore" ".git/*" ".github/*" "MARS4RO2RW/*"
+        run: zip -r "MARS_V${{ steps.SET_VERSION.outputs.MARS_VER_CODE }}_${{ steps.SET_TIME.outputs.ZIP_TIME }} .zip" . -x ".gitattributes" ".gitignore" ".git/*" ".github/*" "MARS4RO2RW/*"
 
       - name: CREATE RELEASE
         id: CREATE_RELEASE
@@ -29,8 +33,8 @@ jobs:
         with:
           draft: false
           prerelease: true
-          tag_name: MARS_V${{ steps.MARS_VERSION.outputs.MARS_VER_CODE }}
-          release_name: MARS_V${{ steps.MARS_VERSION.outputs.MARS_VER_CODE }}
+          tag_name: MARS_V${{ steps.SET_VERSION.outputs.MARS_VER_CODE }}
+          release_name: MARS_V${{ steps.SET_VERSION.outputs.MARS_VER_CODE }}
 
       - name: UPLOAD RELEASE
         id: UPLOAD_RELEASE
@@ -39,6 +43,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.CREATE_RELEASE.outputs.upload_url }} 
-          asset_path: ./MARS_V${{ steps.MARS_VERSION.outputs.MARS_VER_CODE }}.zip
-          asset_name: MARS_V${{ steps.MARS_VERSION.outputs.MARS_VER_CODE }}.zip
+          asset_path: ./MARS_V${{ steps.SET_VERSION.outputs.MARS_VER_CODE }}.zip
+          asset_name: MARS_V${{ steps.SET_VERSION.outputs.MARS_VER_CODE }}.zip
           asset_content_type: application/zip
