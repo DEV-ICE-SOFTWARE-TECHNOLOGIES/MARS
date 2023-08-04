@@ -12,8 +12,8 @@ DEVICE=$(getprop ro.product.device)
 
 BOOTSLOT=$(getprop ro.boot.slot_suffix)
 
-MARS_VER='23.07'
-MARS_VER_CODE=230722
+MARS_VER='23.08'
+MARS_VER_CODE=230804
 MARS_PATH=/sdcard/mars
 MARS_LOG=/sdcard/MARS.log
 MARS_PROP=$MARS_PATH/props/$DEVICE/mars.prop
@@ -63,7 +63,7 @@ _setup() {
 
   rm -rf $MARS_PATH/META-INF
 
-  chmod -R 755 /tmp/mars
+  chmod -R 755 $MARS_PATH
 
   sort -u -o $MARS_PROP $MARS_PROP
 
@@ -143,6 +143,7 @@ _tools() {
     if [ ! -f "$BUSYBOXFILE" ]; then
       ui_print "BUSYBOX INSTALLATION FAILED, ABORTING..."
       ui_print " "
+      exit 1
     else
       ui_print "BUSYBOX INSTALLATION SUCCESSFUL, CONTINUING..."
       ui_print " "
@@ -164,6 +165,7 @@ _tools() {
     if [ ! -f "$ZIPALIGNFILE" ]; then
       ui_print "ZIPALIGN INSTALLATION FAILED, ABORTING..."
       ui_print " "
+      exit 1
     else
       ui_print "ZIPALIGN INSTALLATION SUCCESSFUL, CONTINUING..."
       ui_print " "
@@ -185,6 +187,7 @@ _tools() {
     if [ ! -f "$SQLITE3FILE" ]; then
       ui_print "SQLITE3 INSTALLATION FAILED, ABORTING..."
       ui_print " "
+      exit 1
     else
       ui_print "SQLITE3 INSTALLATION SUCCESSFUL, CONTINUING..."
       ui_print " "
@@ -545,7 +548,7 @@ _optimize() {
   ui_print "OPTIMIZING ANDROID..."
   ui_print " "
 
-  # Network Latency
+  # NETWORK
   echo "2" >/proc/sys/net/ipv4/tcp_ecn
   echo "1" >/proc/sys/net/ipv4/tcp_sack
   echo "1" >/proc/sys/net/ipv4/tcp_dsack
@@ -557,22 +560,18 @@ _optimize() {
   echo "1" >/proc/sys/net/ipv6/tcp_low_latency
   echo "1" >/proc/sys/net/ipv6/tcp_timestamps
 
-  # Optimize upload / download Speeds
   for i in /sys/class/net/*; do
     echo "100" >$i/tx_queue_len
   done
 
-  # Gentle Fair Sleeper
-  echo "NO_GENTLE_FAIR_SLEEPERS" >/sys/kernel/debug/sched_features
-  echo "NO_NEW_FAIR_SLEEPERS" >/sys/kernel/debug/sched_features
-  echo "NO_NORMALIZED_SLEEPER" >/sys/kernel/debug/sched_features
-
-  # Normalized Sleeper
+  # SLEEPERS
   if [ -e /sys/kernel/debug/sched_features ]; then
+    echo "NO_GENTLE_FAIR_SLEEPERS" >/sys/kernel/debug/sched_features
+    echo "NO_NEW_FAIR_SLEEPERS" >/sys/kernel/debug/sched_features
     echo "NO_NORMALIZED_SLEEPER" >/sys/kernel/debug/sched_features
   fi
 
-  # Kernel
+  # KERNEL
   if [ -e /proc/sys/kernel/softlockup_panic ]; then
     echo "0" >/proc/sys/kernel/softlockup_panic
   fi
@@ -586,7 +585,7 @@ _optimize() {
     echo "0" >/proc/sys/kernel/panic
   fi
 
-  # entropy tweaks
+  # ENTROPY
   echo "1024" >/proc/sys/kernel/random/read_wakeup_threshold
   echo "1024" >/proc/sys/kernel/random/write_wakeup_threshold
 

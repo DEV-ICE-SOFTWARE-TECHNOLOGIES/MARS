@@ -7,43 +7,38 @@ on:
 
 jobs:
   build:
-    name: Upload Asset
+    name: UPLOAD ASSET
     runs-on: ubuntu-latest
     steps:
           
-      - name: Checkout Repo
+      - name: CHECKOUT REPO
         uses: actions/checkout@v2
-
-      - name: Get Id
-        id: idMARS_VER_CODE
-        run: echo "::set-output name=id::$(grep "^id=" META-INF/com/google/android/update-binary|cut -d'=' -f2)"
         
-      - name: Get Version
-        id: idMARS_VER
-        run: echo "::set-output name=version::$(grep "^version=" META-INF/com/google/android/update-binary|cut -d'=' -f2)"
+      - name: SET VERSION
+        id: MARS_VERSION
+        run: echo "::set-output name=MARS_VER_CODE::$(grep "^MARS_VER_CODE=" META-INF/com/google/android/update-binary|cut -d'=' -f2)"
 
-      - name: Build MARS
-        run: zip -r "MARS_${{ steps.idMARS_VER.outputs.id }}.V${{ steps.idMARS_VER_CODE.outputs.version }}.zip" . -x "README.md" ".git/*" ".github/*" 
+      - name: BUILD ZIP
+        run: zip -r "MARS_V${{ steps.MARS_VERSION.outputs.MARS_VER_CODE }}.zip" . -x ".gitattributes" ".gitignore" ".git/*" ".github/*" "MARS4RO2RW/*"
 
-      - name: Create Release
-        id: create_release
+      - name: CREATE RELEASE
+        id: CREATE_RELEASE
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           draft: false
           prerelease: true
-          # Create tag name from version
-          tag_name: MARS SNAPSHOT V${{ steps.idMARS_VER.outputs.version }}
-          release_name: MARS SNAPSHOT V${{ steps.idMARS_VER.outputs.version }}
+          tag_name: MARS_V${{ steps.MARS_VERSION.outputs.MARS_VER_CODE }}
+          release_name: MARS_V${{ steps.MARS_VERSION.outputs.MARS_VER_CODE }}
 
-      - name: Upload Release Asset
-        id: upload-release-asset 
+      - name: UPLOAD RELEASE
+        id: UPLOAD_RELEASE
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} 
-          asset_path: ./${{ steps.idMARS_VER_CODE.outputs.id }}.v${{ steps.idMARS_VER.outputs.version }}.zip
-          asset_name: ${{ steps.idMARS_VER_CODE.outputs.id }}.v${{ steps.idMARS_VER.outputs.version }}.zip
+          upload_url: ${{ steps.CREATE_RELEASE.outputs.upload_url }} 
+          asset_path: ./MARS_V${{ steps.MARS_VERSION.outputs.MARS_VER_CODE }}.zip
+          asset_name: MARS_V${{ steps.MARS_VERSION.outputs.MARS_VER_CODE }}.zip
           asset_content_type: application/zip
