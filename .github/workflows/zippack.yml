@@ -16,7 +16,7 @@ jobs:
 
       - name: SET TIME
         id: SET_TIME
-        run: echo "::set-output name=ZIP_TIME::$(date +%H%M%S)}"
+        run: echo "::set-output name=ZIP_TIME::$(date +%H:%M:%S)"
         
       - name: SET VERSION
         id: SET_VERSION
