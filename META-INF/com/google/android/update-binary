@@ -1,9 +1,5 @@
 #!/sbin/sh
 
-# To-Do:
-# - Make Prop Folders to Configs Folders
-# - Make Configs Folders contain Sub Folders for Props and Android
-
 set -x
 
 umask 022
@@ -13,7 +9,7 @@ DEVICE=$(getprop ro.product.device)
 BOOTSLOT=$(getprop ro.boot.slot_suffix)
 
 MARS_VER='23.08'
-MARS_VER_CODE=230804
+MARS_VER_CODE=230806
 MARS_PATH=/sdcard/mars
 MARS_LOG=/sdcard/MARS.log
 MARS_PROP=$MARS_PATH/props/$DEVICE/mars.prop
@@ -122,7 +118,6 @@ _debloat() {
   rm -rf "/product/priv-app/MiBrowserGlobal"
   rm -rf "/product/priv-app/MiuiGallery"
   rm -rf "/product/priv-app/MiuiScanner"
-  rm -rf "/product/priv-app/Weather"
 
   sleep 1
 
@@ -216,7 +211,7 @@ _extract() {
 }
 
 _product_patch() {
-  ui_print "RUNNING PATCH PROP SCRIPT..."
+  ui_print "RUNNING PRODUCT PATCH PROP SCRIPT..."
   ui_print " "
 
   ex() {
@@ -282,7 +277,7 @@ _product_patch() {
 
   sort -u -o "$PRODUCT_PROP" "$PRODUCT_PROP"
 
-  ui_print "PROPS SUCCESSFULLY PATCHED"
+  ui_print "PRODUCT PROPS SUCCESSFULLY PATCHED"
   ui_print " "
 
   echo "#" >>"$PRODUCT_PROP"
@@ -294,7 +289,7 @@ _product_patch() {
 }
 
 _system_patch() {
-  ui_print "RUNNING PATCH PROP SCRIPT..."
+  ui_print "RUNNING SYSTEM PATCH PROP SCRIPT..."
   ui_print " "
 
   ex() {
@@ -360,7 +355,7 @@ _system_patch() {
 
   sort -u -o "$SYSTEM_PROP" "$SYSTEM_PROP"
 
-  ui_print "PROPS SUCCESSFULLY PATCHED"
+  ui_print "SYSTEM PROPS SUCCESSFULLY PATCHED"
   ui_print " "
 
   echo "#" >>"$SYSTEM_PROP"
@@ -372,7 +367,7 @@ _system_patch() {
 }
 
 _system_ext_patch() {
-  ui_print "RUNNING PATCH PROP SCRIPT..."
+  ui_print "RUNNING SYSTEM_EXT PATCH PROP SCRIPT..."
   ui_print " "
 
   ex() {
@@ -438,7 +433,7 @@ _system_ext_patch() {
 
   sort -u -o "$SYSTEM_EXT_PROP" "$SYSTEM_EXT_PROP"
 
-  ui_print "PROPS SUCCESSFULLY PATCHED"
+  ui_print "SYSTEM_EXT PROPS SUCCESSFULLY PATCHED"
   ui_print " "
 
   echo "#" >>"$SYSTEM_EXT_PROP"
@@ -450,7 +445,7 @@ _system_ext_patch() {
 }
 
 _vendor_patch() {
-  ui_print "RUNNING PATCH PROP SCRIPT..."
+  ui_print "RUNNING VENDOR PATCH PROP SCRIPT..."
   ui_print " "
 
   ex() {
@@ -516,29 +511,12 @@ _vendor_patch() {
 
   sort -u -o "$VENDOR_PROP" "$VENDOR_PROP"
 
-  ui_print "PROPS SUCCESSFULLY PATCHED"
+  ui_print "VENDOR PROPS SUCCESSFULLY PATCHED"
   ui_print " "
 
   echo "#" >>"$VENDOR_PROP"
 
   chmod 0644 "$VENDOR_PROP" && ui_print "ORIGINAL PERMISSIONS FOR $VENDOR_PROP RESTORED"
-
-  sleep 1
-
-}
-
-_magisk() {
-  if [ -d "/data/adb/magisk" ]; then
-
-    ui_print "MAGISK ALREADY INSTALLED, SKIPPING..."
-    ui_print " "
-
-  else
-    ui_print "MAGISK NOT FOUND, INSTALLATION STARTS..."
-    ui_print " "
-
-    sh $MARS_PATH/magisk/META-INF/com/google/android/update-binary dummy 1 $MARS_PATH/magisk/magisk.zip
-  fi
 
   sleep 1
 
