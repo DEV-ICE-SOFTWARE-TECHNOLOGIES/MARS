@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- Copyright (C) 2023 MIUSTONE
+-->
+
+<config>
+
+     <allowed-vendor-apex package="com.google.pixel.camera.hal" installerPackage="com.google.android.GoogleCamera" />
+
+     <default-enabled-vr-app package="com.google.vr.vrcore"
+          class="com.google.vr.vrcore.common.VrCoreListenerService" />
+
+     <allow-association target="com.google.android.as.oss" allowed="com.google.android.as" />
+     <allow-association target="com.google.android.as.oss" allowed="com.google.android.odad" />
+     <allow-association target="com.google.android.as" allowed="com.android.bluetooth" />
+     <allow-association target="com.google.android.as" allowed="com.android.providers.contacts" />
+     <allow-association target="com.google.android.as" allowed="com.android.providers.media" />
+     <allow-association target="com.google.android.as" allowed="com.android.providers.telephony" />
+     <allow-association target="com.google.android.as" allowed="com.android.systemui" />
+     <allow-association target="com.google.android.as" allowed="com.google.android.as.oss" />
+     <allow-association target="com.google.android.as" allowed="com.google.android.providers.media.module" />
+     <allow-association target="com.google.android.odad" allowed="com.google.android.as.oss" />
+     <allow-in-power-save package="com.android.omadm.service" />
+     <allow-in-power-save package="com.android.pixellogger" />
+     <allow-in-power-save package="com.android.sdm.plugins.connmo" />
+     <allow-in-power-save package="com.android.sdm.plugins.dcmo" />
+     <allow-in-power-save package="com.android.sdm.plugins.diagmon" />
+     <allow-in-power-save package="com.android.sdm.plugins.usccdm" />
+     <allow-in-power-save package="com.android.vzwomatrigger" />
+     <allow-in-power-save package="com.google.ambient.streaming" />
+     <allow-in-power-save package="com.google.android.apps.safetyhub" />
+     <allow-in-power-save package="com.google.android.apps.scone" />
+     <allow-in-power-save package="com.google.android.GoogleCamera" />
+     <allow-in-power-save package="com.google.mds" />
+     <allow-in-power-save package="com.google.modemservice" />
+     <allow-in-power-save package="com.google.pixel.exo" />
+     <allow-in-power-save package="com.google.pixel.gate.android.daemon" />
+     <allow-in-power-save package="com.google.pixel.gate.android.pysupport" />
+     <allow-in-power-save-except-idle package="com.google.android.as.oss" />
+     <allow-in-power-save-except-idle package="com.google.android.flipendo" />
+     <bugreport-whitelisted package="com.android.pixellogger" />
+     <bugreport-whitelisted package="com.google.android.apps.betterbug.partners" />
+     <bugreport-whitelisted package="com.google.android.apps.betterbug" />
+     <bugreport-whitelisted package="com.google.android.apps.internal.betterbug" />
+     <feature name="android.software.game_service" />
+     <feature name="com.google.android.apps.dialer.call_recording_audio" />
+     <feature name="com.google.android.apps.photos.NEXUS_PRELOAD" />
+     <feature name="com.google.android.apps.photos.nexus_preload" />
+     <feature name="com.google.android.apps.photos.PIXEL_2017_PRELOAD" />
+     <feature name="com.google.android.apps.photos.PIXEL_2018_PRELOAD" />
+     <feature name="com.google.android.apps.photos.PIXEL_2019_PRELOAD" />
+     <feature name="com.google.android.feature.ADAPTIVE_CHARGING" />
+     <feature name="com.google.android.feature.AER_OPTIMIZED" />
+     <feature name="com.google.android.feature.ASI" />
+     <feature name="com.google.android.feature.DREAMLINER" />
+     <feature name="com.google.android.feature.EXCHANGE_6_2" />
+     <feature name="com.google.android.feature.GMS_GAME_SERVICE" />
+     <feature name="com.google.android.feature.GOOGLE_BUILD" />
+     <feature name="com.google.android.feature.GOOGLE_EXPERIENCE" />
+     <feature name="com.google.android.feature.GOOGLE_FI_BUNDLED" />
+     <feature name="com.google.android.feature.NEXT_GENERATION_ASSISTANT" />
+     <feature name="com.google.android.feature.PERSONAL_SAFETY" />
+     <feature name="com.google.android.feature.PIXEL_2017_EXPERIENCE" />
+     <feature name="com.google.android.feature.PIXEL_2018_EXPERIENCE" />
+     <feature name="com.google.android.feature.PIXEL_2019_EXPERIENCE" />
+     <feature name="com.google.android.feature.PIXEL_2019_MIDYEAR_EXPERIENCE" />
+     <feature name="com.google.android.feature.PIXEL_2020_EXPERIENCE" />
+     <feature name="com.google.android.feature.PIXEL_2020_MIDYEAR_EXPERIENCE" />
+     <feature name="com.google.android.feature.PIXEL_2021_EXPERIENCE" />
+     <feature name="com.google.android.feature.PIXEL_2021_MIDYEAR_EXPERIENCE" />
+     <feature name="com.google.android.feature.PIXEL_2022_EXPERIENCE" />
+     <feature name="com.google.android.feature.PIXEL_2022_MIDYEAR_EXPERIENCE" />
+     <feature name="com.google.android.feature.PIXEL_EXPERIENCE" />
+     <feature name="com.google.android.feature.QUICK_TAP" />
+     <feature name="com.google.lens.feature.CAMERA_INTEGRATION" />
+     <feature name="com.google.lens.feature.IMAGE_INTEGRATION" />
+
+     <component-override package="com.google.android.documentsui">
+          <component class="com.android.documentsui.LauncherActivity" enabled="false" />
+          <component class="com.android.documentsui.ViewDownloadsActivity" enabled="false" />
+     </component-override>
+
+     <component-override package="com.google.android.storagemanager">
+          <component class="com.android.storagemanager.deletionhelper.DeletionHelperActivity"
+               enabled="false" />
+     </component-override>
+
+     <component-override package="com.google.android.apps.nbu.files">
+          <component class="com.google.android.apps.nbu.files.gateway.preview.PreviewActivity"
+               enabled="false" />
+     </component-override>
+
+     <component-override package="com.android.settings">
+          <component class=".RegulatoryInfoDisplayActivity" enabled="true" />
+     </component-override>
+
+
+     <hidden-api-whitelisted-app package="android.car.cluster.maserati" />
+     <hidden-api-whitelisted-app package="com.android.apps.tag" />
+     <hidden-api-whitelisted-app package="com.android.auto.embedded.cts.verifier" />
+     <hidden-api-whitelisted-app package="com.android.car.bugreport" />
+     <hidden-api-whitelisted-app package="com.android.car.carlauncher" />
+     <hidden-api-whitelisted-app package="com.android.car.home" />
+     <hidden-api-whitelisted-app package="com.android.car.retaildemo" />
+     <hidden-api-whitelisted-app package="com.android.car.settingslib.robotests" />
+     <hidden-api-whitelisted-app package="com.android.car.setupwizardlib.robotests" />
+     <hidden-api-whitelisted-app package="com.android.cardock" />
+     <hidden-api-whitelisted-app package="com.android.connectivity.metrics" />
+     <hidden-api-whitelisted-app package="com.android.facelock" />
+     <hidden-api-whitelisted-app package="com.android.google.gce.gceservice" />
+     <hidden-api-whitelisted-app package="com.android.hotwordenrollment.okgoogle" />
+     <hidden-api-whitelisted-app package="com.android.hotwordenrollment.tgoogle" />
+     <hidden-api-whitelisted-app package="com.android.hotwordenrollment.xgoogle" />
+     <hidden-api-whitelisted-app package="com.android.inputmethod.latin" />
+     <hidden-api-whitelisted-app package="com.android.media.update" />
+     <hidden-api-whitelisted-app package="com.android.netspeed" />
+     <hidden-api-whitelisted-app package="com.android.onemedia" />
+     <hidden-api-whitelisted-app package="com.android.pixellogger" />
+     <hidden-api-whitelisted-app package="com.android.ramdump" />
+     <hidden-api-whitelisted-app package="com.android.settingslib.robotests" />
+     <hidden-api-whitelisted-app package="com.android.simappdialog" />
+     <hidden-api-whitelisted-app package="com.android.statsd.dogfood" />
+     <hidden-api-whitelisted-app package="com.android.statsd.loadtest" />
+     <hidden-api-whitelisted-app package="com.android.systemui.shared" />
+     <hidden-api-whitelisted-app package="com.android.test.power" />
+     <hidden-api-whitelisted-app package="com.android.test.voiceenrollment" />
+     <hidden-api-whitelisted-app package="com.android.tv.provision" />
+     <hidden-api-whitelisted-app package="com.google.android.apps.nexuslauncher" />
+     <hidden-api-whitelisted-app package="com.google.android.apps.scone" />
+     <hidden-api-whitelisted-app package="com.google.android.apps.wallpaper" />
+     <hidden-api-whitelisted-app package="com.google.android.as.oss" />
+     <hidden-api-whitelisted-app package="com.google.android.as" />
+     <hidden-api-whitelisted-app package="com.google.android.asdiv" />
+     <hidden-api-whitelisted-app package="com.google.android.athome.globalkeyinterceptor" />
+     <hidden-api-whitelisted-app package="com.google.android.car.defaultstoragemonitoringcompanionapp" />
+     <hidden-api-whitelisted-app package="com.google.android.car.diagnosticrecorder" />
+     <hidden-api-whitelisted-app package="com.google.android.car.diagnosticverifier" />
+     <hidden-api-whitelisted-app package="com.google.android.car.diskwriteapp" />
+     <hidden-api-whitelisted-app package="com.google.android.car.flashapp" />
+     <hidden-api-whitelisted-app package="com.google.android.car.kitchensink" />
+     <hidden-api-whitelisted-app package="com.google.android.car.obd2app" />
+     <hidden-api-whitelisted-app package="com.google.android.car.setupwizard" />
+     <hidden-api-whitelisted-app package="com.google.android.car.usb.aoap.host" />
+     <hidden-api-whitelisted-app package="com.google.android.car.vms.subscriber" />
+     <hidden-api-whitelisted-app package="com.google.android.carrier" />
+     <hidden-api-whitelisted-app package="com.google.android.carriersetup" />
+     <hidden-api-whitelisted-app package="com.google.android.connectivitymonitor" />
+     <hidden-api-whitelisted-app package="com.google.android.edu.harnesssettings" />
+     <hidden-api-whitelisted-app package="com.google.android.ext.services" />
+     <hidden-api-whitelisted-app package="com.google.android.factoryota" />
+     <hidden-api-whitelisted-app package="com.google.android.feedback" />
+     <hidden-api-whitelisted-app package="com.google.android.gsf" />
+     <hidden-api-whitelisted-app package="com.google.android.hardwareinfo" />
+     <hidden-api-whitelisted-app package="com.google.android.hiddenmenu" />
+     <hidden-api-whitelisted-app package="com.google.android.partner.provisioning" />
+     <hidden-api-whitelisted-app package="com.google.android.partnersetup" />
+     <hidden-api-whitelisted-app package="com.google.android.permissioncontroller" />
+     <hidden-api-whitelisted-app package="com.google.android.pixel.setupwizard" />
+     <hidden-api-whitelisted-app package="com.google.android.preloaded_drawable_viewer" />
+     <hidden-api-whitelisted-app package="com.google.android.printservice.recommendation" />
+     <hidden-api-whitelisted-app package="com.google.android.sampledeviceowner" />
+     <hidden-api-whitelisted-app package="com.google.android.sdksetup" />
+     <hidden-api-whitelisted-app package="com.google.android.setupwizard" />
+     <hidden-api-whitelisted-app package="com.google.android.storagemanager" />
+     <hidden-api-whitelisted-app package="com.google.android.tag" />
+     <hidden-api-whitelisted-app package="com.google.android.tungsten.setupwraith" />
+     <hidden-api-whitelisted-app package="com.google.android.tv.bugreportsender" />
+     <hidden-api-whitelisted-app package="com.google.android.tv.frameworkpackagestubs" />
+     <hidden-api-whitelisted-app package="com.google.android.vendorloggingservice" />
+     <hidden-api-whitelisted-app package="com.google.android.volta" />
+     <hidden-api-whitelisted-app package="com.google.android.wfcactivation" />
+     <hidden-api-whitelisted-app package="com.google.mds" />
+     <hidden-api-whitelisted-app package="com.google.modemservice" />
+     <hidden-api-whitelisted-app package="com.google.SSRestartDetector" />
+     <hidden-api-whitelisted-app package="com.htc.omadm.trigger" />
+     <hidden-api-whitelisted-app package="com.qualcomm.qcrilmsgtunnel" />
+     <hidden-api-whitelisted-app package="com.ustwo.lwp" />
+     <hidden-api-whitelisted-app package="org.chromium.arc.accessibilityhelper" />
+     <hidden-api-whitelisted-app package="org.chromium.arc.apkcacheprovider" />
+     <hidden-api-whitelisted-app package="org.chromium.arc.applauncher" />
+     <hidden-api-whitelisted-app package="org.chromium.arc.backup_settings" />
+     <hidden-api-whitelisted-app package="org.chromium.arc.cast_receiver" />
+     <hidden-api-whitelisted-app package="org.chromium.arc.crash_collector" />
+     <hidden-api-whitelisted-app package="org.chromium.arc.file_system" />
+     <hidden-api-whitelisted-app package="org.chromium.arc.gms" />
+     <hidden-api-whitelisted-app package="org.chromium.arc.home" />
+     <hidden-api-whitelisted-app package="org.chromium.arc.intent_helper" />
+     <hidden-api-whitelisted-app package="org.chromium.arc.tts" />
+     
+     <initial-package-state package="com.android.chrome" stopped="false"/>
+     <initial-package-state package="com.android.settings" stopped="false" />
+     <initial-package-state package="com.android.stk" stopped="false" />
+     <initial-package-state package="com.android.vending" stopped="false"/>
+     <initial-package-state package="com.google.android.apps.docs" stopped="false"/>
+     <initial-package-state package="com.google.android.apps.internal.betterbug" stopped="false" />
+     <initial-package-state package="com.google.android.apps.maps" stopped="false"/>
+     <initial-package-state package="com.google.android.apps.messaging" stopped="false"/>
+     <initial-package-state package="com.google.android.apps.nbu.files" stopped="false"/>
+     <initial-package-state package="com.google.android.apps.photos" stopped="false"/>
+     <initial-package-state package="com.google.android.apps.safetyhub" stopped="false" />
+     <initial-package-state package="com.google.android.apps.youtube.music" stopped="false"/>
+     <initial-package-state package="com.google.android.calendar" stopped="false"/>
+     <initial-package-state package="com.google.android.contacts" stopped="false"/>
+     <initial-package-state package="com.google.android.gm" stopped="false"/>
+     <initial-package-state package="com.google.android.GoogleCamera" stopped="false" />
+     <initial-package-state package="com.google.android.googlequicksearchbox" stopped="false"/>
+     <initial-package-state package="com.google.android.videos" stopped="false"/>
+     <initial-package-state package="com.google.android.youtube" stopped="false"/>
+     <initial-package-state package="com.google.mds" stopped="false" />
+ 
+     <whitelisted-staged-installer package="com.android.vending" isModulesInstaller="true" />
+     <whitelisted-staged-installer package="com.google.android.GoogleCamera" />
+
+</config>
